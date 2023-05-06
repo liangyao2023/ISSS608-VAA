@@ -1,6 +1,0 @@
----
-title: "In-class_Ex03"
-author: "LIANG Yao"
-edit: visual
-date: 29-April-2023
----

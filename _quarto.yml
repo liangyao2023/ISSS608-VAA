@@ -9,12 +9,14 @@ website:
         text: Home
       - text: "In-class_Ex"
         menu: 
-          - href: In-class_Ex03/In-class_Ex03.html
+          - href: In-class_Ex/In-class_Ex03/In-class_Ex03.html
             text: "In-class_Ex 3"
       - text: "Handson_Ex"
         menu: 
           - href: Handson_Ex/Handson_Ex01/Handson_Ex01.html
             text: "Handson_Ex 1"
+          - href: Handson_Ex/Handson_Ex03/Handson_Ex03.html
+            text: "Handson_Ex 3"
           - href: Handson_Ex/Handson_Ex04/Handson_Ex04.html
             text: "Handson_Ex 4"
 

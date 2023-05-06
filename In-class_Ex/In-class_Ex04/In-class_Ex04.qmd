@@ -14,13 +14,56 @@ execute:
 Load packages and data:
 
 ```{r}
-pacman::p_load(rstatix, gt,patchwork, tidyverse)
+pacman::p_load(rstatix, gt, patchwork, tidyverse)
 
-exam <-read_csv("data/Exam_data.csv")
+exam_data <-read_csv("data/Exam_data.csv")
 ```
 
 ## Visualizing normal distribution:
 
-```{r}
+::: panel-tabset
+## Plot
 
+```{r}
+#| echo: false
+#| fig-width: 4
+#| fig-height: 4
+ggplot(exam_data,
+      aes(sample=ENGLISH)) +
+  stat_qq() +
+  stat_qq_line()
+```
+
+## Code
+
+```{r}
+#| eval: false
+#| fig-width: 4
+#| fig-height: 4
+ggplot(exam_data,
+      aes(sample=ENGLISH)) +
+  stat_qq() +
+  stat_qq_line()
+```
+:::
+
+::: callout-note
+Some emphasizing notice
+:::
+
+```{r}
+qq <- ggplot(exam_data,
+             aes(sample=ENGLISH)) +
+  stat_qq() +
+  stat_qq_line()
+
+sw_t <- exam_data %>%
+  shapiro_test(ENGLISH) %>%
+  gt()
+
+tmp <- tempfile(fileext = '.png')
+gtsave(sw_t, tmp)
+table_png <- png::readPNG(tmp, native = TRUE)
+
+qq + table_png
 ```

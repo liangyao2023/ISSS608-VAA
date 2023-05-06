@@ -185,7 +185,7 @@ my_sum <- exam %>%
 knitr::kable(head(my_sum), format = 'html')
 ```
 
-###  Visualizing the uncertainty of point estimates: ggplot2 methods
+### Visualizing the uncertainty of point estimates: ggplot2 methods
 
 ```{r}
 ggplot(my_sum) +

@@ -1,0 +1,20 @@
+---
+title: "In-class_Ex04"
+author: "LIANG YAO"
+---
+
+# Visual Statistical Analysis
+
+Load packages and data:
+
+```{r}
+pacman::p_load(rstatix, gt,patchwork, tidyverse)
+
+exam <-read_csv("data/Exam_data.csv")
+```
+
+## Visualizing normal distribution:
+
+```{r}
+
+```

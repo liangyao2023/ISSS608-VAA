@@ -10,7 +10,9 @@ website:
       - text: "In-class_Ex"
         menu: 
           - href: In-class_Ex/In-class_Ex03/In-class_Ex03.html
-            text: "In-class_Ex 03"
+            text: "In-class_Ex 3"
+          - href: In-class_Ex/In-class_Ex04/In-class_Ex04.html
+            text: "In-class_Ex 4"
       - text: "Handson_Ex"
         menu: 
           - href: Handson_Ex/Handson_Ex01/Handson_Ex01.html

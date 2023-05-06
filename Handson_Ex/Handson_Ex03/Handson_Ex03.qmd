@@ -13,7 +13,7 @@ pacman::p_load(ggiraph, plotly,
 exam_data <- read_csv("data/Exam_data.csv")
 ```
 
-## Interactive version of ggplot2 geom 
+## Interactive version of ggplot2 geom
 
 ```{r}
 p <- ggplot(data=exam_data, 
@@ -197,9 +197,7 @@ girafe(
 
 ## Coordinated multiple views:
 
-
 1\. Appropriate interactive functions of \*\*ggiraph\*\* will be used to create the multiple views.
-
 
 2\. \*patchwork\* function of \[patchwork\](https://patchwork.data-imaginist.com/) package will be used inside girafe function to create the interactive coordinated multiple views.
 
@@ -265,12 +263,9 @@ ggplotly(p)
 
 ## The creation of a coordinated linked plot by using plotly involves three steps:
 
-
 \- \[\`highlight_key()\`\](https://www.rdocumentation.org/packages/plotly/versions/4.9.2/topics/highlight_key) of \*\*plotly\*\* package is used as shared data.
 
-
 \- two scatterplots will be created by using ggplot2 functions.
-
 
 \- lastly, \[\*subplot()\*\](https://plotly.com/r/subplots/) of \*\*plotly\*\* package is used to place them next to each other side-by-side.
 

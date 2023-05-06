@@ -1,6 +1,12 @@
 ---
 title: "Handson_Ex03"
 author: "LIANG YAO"
+date: '28 April 2023'
+date-modified: "`r Sys.Date()`"
+execute: 
+  warning: false
+  echo: true
+  eval: true
 ---
 
 # Interactive Visual

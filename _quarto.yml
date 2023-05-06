@@ -5,22 +5,22 @@ website:
   title: "ISSS608-VAA"
   navbar:
     left:
-      - href: index.qmd
-        text: Home
+      - text: "Home"
+        href: "index.qmd"
       - text: "In class_Ex"
         menu: 
-          - href: "In-class_Ex/In-class_Ex03/In-class_Ex03.html"
-            text: "In class_Ex 3"
-          - href: "In-class_Ex/In-class_Ex04/In-class_Ex04.html"
-            text: "In class_Ex 4"
+          - text: "In class_Ex 3"
+            href: "In-class_Ex/In-class_Ex03/In-class_Ex03.html"
+          - text: "In class_Ex 4" 
+            href: "In-class_Ex/In-class_Ex04/In-class_Ex04.html"
       - text: "Hands on_Ex"
         menu: 
-          - href: "Handson_Ex/Handson_Ex01/Handson_Ex01.html"
-            text: "Hands on_Ex 1"
-          - href: "Handson_Ex/Handson_Ex03/Handson_Ex03.html"
-            text: "Hands on Ex 3"
-          - href: "Handson_Ex/Handson_Ex04/Handson_Ex04.html"
-            text: "Hands on Ex 4"
+          - text: "Hands on_Ex 1"
+            href: "Handson_Ex/Handson_Ex01/Handson_Ex01.html"
+          - text: "Hands on_Ex 3"
+            href: "Handson_Ex/Handson_Ex03/Handson_Ex03.html"
+          - text: "Hands on_Ex 4"
+            href: "Handson_Ex/Handson_Ex04/Handson_Ex04.html"
 
 format:
   html:

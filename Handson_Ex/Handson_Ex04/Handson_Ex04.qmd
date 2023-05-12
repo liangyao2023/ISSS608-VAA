@@ -25,6 +25,8 @@ exam <-read.csv("data/Exam_data.csv")
 
 ### One-sample test: *gghistostats()* method
 
+Type of statistic expected (**`"parametric"`** or **`"nonparametric"`** or **`"robust"`** or **`"bayes"`**).Corresponding abbreviations are also accepted: **`"p"`** (for parametric), **`"np"`** (nonparametric), **`"r"`** (robust), or **`"bf"`**resp.
+
 ```{r}
 set.seed(1234)
 

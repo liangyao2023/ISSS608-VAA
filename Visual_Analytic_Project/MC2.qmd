@@ -18,7 +18,7 @@ pacman::p_load(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic, ggridges, ggan
 ```
 
 ```{r}
-MC2 <- jsonlite::fromJSON("data/mc2_challenge_graph.json")
+#MC2 <- jsonlite::fromJSON("data/mc2_challenge_graph.json")
 ```
 
 ```{r}

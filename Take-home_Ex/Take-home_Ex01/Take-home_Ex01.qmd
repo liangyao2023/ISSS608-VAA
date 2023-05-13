@@ -60,7 +60,7 @@ For explanation of Rent Adjustment, please refer to this [link](https://www.lawi
 The data should be processed by using appropriate **tidyverse** family of packages and the statistical graphics must be prepared using ggplot2 and its extensions.
 
 ```{r}
-pacman::p_load(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic, ggridges, gganimate, gapminder)
+pacman::p_load(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic, ggridges, gganimate,ggdist)
 
 fi <- read.csv("data/FinancialJournal.csv")
 parti <- read.csv("data/Participants.csv")
@@ -79,7 +79,7 @@ summary(parti)
 
 ### 3.2.1 Further check of fi table by summarizing by categories:
 
--   It's confirmed from the summary table that "wages" and "rent adjustment" got only positive numbers and others are negative numbers.
+-   It's confirmed from the summary table that "wages" and "rent adjustment" got only positive numbers and other categories are negative numbers.
 
 ```{r}
 fi$month <- months.Date(strptime(fi$timestamp, "%Y-%m-%d"))
@@ -105,13 +105,16 @@ Here the Rent Adjustment amount which have much less N of records compare to oth
 -   Distribution of joviality:
 
     ```{r}
-    ggplot(data=parti, aes(x = joviality)) +
+    d <- highlight_key(parti)
+    p <-ggplot(data=parti, aes(x = joviality)) +
       geom_histogram(bins=10, 
                      boundary = 100,
                      color="white", 
                      fill="#4575B4") +
       theme_light()+
       ggtitle("Distribution of joviality")
+
+    highlight(ggplotly(p),"plotly_selected")  
     ```
 
 -   Distribution of other variables:
@@ -158,7 +161,11 @@ Here the Rent Adjustment amount which have much less N of records compare to oth
 
 ### 3.3 Combine information into one table
 
--   Find monthly average income and expenses of each participant ID
+-   Find monthly average income and expenses of each participant ID;
+
+-   Re-categorize wage as "Income", and all others together as "Expenses";
+
+-   And for the convenience of latter using, I will create a column named "absave" to save the absolute number of the amount.
 
 ```{r}
 fi_ave_by_cat <- fi%>%
@@ -177,7 +184,7 @@ fi_ave_by_cat$absave <- abs(fi_ave_by_cat$ave)
 Here I divided the amount of "Rent Adjustment" by 12 rather than the unique months of it's record, that's because this amount is an annual amount occurred only once in a year.
 :::
 
--   Then summarize into a new table named "fi_ave"
+-   Then summarize into a new table named "fi_ave" in which transpose the monthly average Income/Expenses categories into column names;
 
 ```{r}
 fi_ave <- fi_ave_by_cat%>%
@@ -186,7 +193,7 @@ fi_ave <- fi_ave_by_cat%>%
   pivot_wider(names_from = bicat,values_from = mon_ave, names_prefix = "mon_ave_")
 ```
 
--   Combine "fi_ave" with "parti" into a new table named "joy":
+-   Combine "fi_ave" with "parti" into a new table named "joy".
 
 ```{r}
 joy <- full_join(fi_ave,parti,by="participantId")
@@ -199,11 +206,18 @@ summary(joy)
 
 ### 4.1.1 How interest group varies by education levels?
 
+From the chart below we can find that different interest group attract people with quite different education level.
+
 ```{r}
-ggplot(data = joy) +
+d <- highlight_key(joy)
+p <- ggplot(data = joy) +
   geom_mosaic(aes(x = product(interestGroup), fill= educationLevel)) +
   theme_mosaic() +
-  scale_fill_manual(values = c("#4575B4", "#ABD9E9", "#FEE090", "#F46D43"))
+  scale_fill_manual(values = c("#4575B4", "#ABD9E9", "#FEE090", "#F46D43"))+
+  xlab("")+
+  ylab("")
+
+highlight(ggplotly(p),"plotly_selected")  
 ```
 
 ### 4.1.2 How interest group changes with people's age?
@@ -218,13 +232,14 @@ ggplot(joy, aes(x = age, y = interestGroup, fill = interestGroup)) +
   scale_fill_manual(values = c("#F4EDCA","#E7B800", "#C4961A",  "#D16103", "#C3D7A4", "#52854C", "#4E84C4", "#ABD9E9", "#FEE090", "#F46D43")) +
   xlab("Age") +
   ylab("Interest Groups")
-```
 
-### 4.1.3
+```
 
 ## 4.2 Finding financial characteristics of the city
 
 ### 4.2.1 How monthly average income varies between different education level groups
+
+Citizens' monthly income apparently goes up with their educational level, indicating local labor market do care about employees' education background.
 
 ```{r}
 ggbetweenstats(
@@ -240,7 +255,28 @@ ggbetweenstats(
 )
 ```
 
-### 4.2.2 How monthly expenses varies between different household size
+### 4.2.2 Looks into monthly average income's distribution together with other demographic information
+
+Monthly income distributing quite evenly over different household size and joviality level.
+
+```{r}
+d <- highlight_key(joy)
+p <- ggplot(joy, aes(x = mon_ave_Income, y = joviality, 
+                      size = householdSize, 
+                      colour = haveKids)) +
+  geom_point(alpha = 0.6) +
+  scale_colour_manual(values = c("#4E84C4", "#FEE090")) +
+  scale_size(range = c(1, 3))+
+  labs(title = 'Do people earn more feel happier?', 
+       x = 'Monthly average income', 
+       y = 'Joviality')
+
+highlight(ggplotly(p),"plotly_selected")  
+```
+
+### 4.2.3 How monthly expenses varies between different household size
+
+The amount of monthly expenses of single household is quite different from other household size.
 
 ```{r}
 ggbetweenstats(
@@ -256,38 +292,28 @@ ggbetweenstats(
 )
 ```
 
-### 4.2.3 Monthly average amount of expenses by categories
+### 4.2.4 Looks into monthly average expenses by categories
+
+And people's most big amount of expense seems to be shelter expenses.
 
 ```{r}
-ggbetweenstats(
-  data = filter(fi_ave_by_cat, bicat != 'Income'),
-  x = category, 
-  y = absave,
-  type = "p",
-  mean.ci = TRUE, 
-  pairwise.comparisons = TRUE, 
-  pairwise.display = "s",
-  p.adjust.method = "fdr",
-  messages = FALSE,
-  ylab = "monthly average amount of expenses"
-)
+fi_ave_by_cat %>%
+  filter(bicat != "Income" & category != "RentAdjustment") %>%
+  ggplot(aes(x = category, y = absave)) +
+  stat_pointinterval(.width = 0.95,
+  .point = median,
+  .interval = qi) +
+  theme_light() +
+  labs(
+    title = "Confidence intervals of mean expense by category",
+    subtitle = "Mean Point + Multiple-interval plot")
 ```
 
 ## 4.3 Finding correlation between characteristics and joviality
 
 ### 4.3.1 Do people earn more feel happier?
 
-```{r}
-ggplot(joy, aes(x = mon_ave_Income, y = joviality, 
-                      size = householdSize, 
-                      colour = haveKids)) +
-  geom_point(alpha = 0.6) +
-  scale_colour_manual(values = c("#4E84C4", "#FEE090")) +
-  scale_size(range = c(2, 5))+
-  labs(title = 'Do people earn more feel happier?', 
-       x = 'Monthly average income', 
-       y = 'Joviality')
-```
+No matter we look into the correlation between joviality and monthly income as a whole or by educational level group, the correlation is relatively week.
 
 ```{r}
 ggscatterstats(data = joy,
@@ -314,6 +340,8 @@ grouped_ggscatterstats(
 
 ### 4.3.2 Or do people spend more feel happier?
 
+-   To look at the correlation between joviality and monthly average expenses, seemingly there is only a weakly positive correlation.
+
 ```{r}
 ggscatterstats(data = joy,
                     x = mon_ave_Expenses,
@@ -322,6 +350,8 @@ ggscatterstats(data = joy,
                     point.args = list(size = 1, alpha = 0.6, stroke = 0),
                title = "Joviality positively correlated with monthly average expenses")
 ```
+
+-   Funny part is, when we look at this correlation by different household size, the correlation between joviality and monthly average expenses is much stronger for size 1 households, indicating single persons enjoy spending money!
 
 ```{r}
 grouped_ggscatterstats(
@@ -332,8 +362,66 @@ grouped_ggscatterstats(
   marginal = FALSE,
   point.args = list(size = 1, alpha = 0.6, stroke = 0),
   grouping.var = householdSize,
-  type = "r",
+  type = "r", 
   annotation.args = list(title = "Relationship between joviality and expenses by household size"),
   plotgrid.args = list(nrow = 1)
 )
 ```
+
+-   Then let's dig deeper to see how single person's spend their money.
+
+    Unlike what we have seen in analysis of whole data set which indicating people spend the most on shelter, the average amount single citizens spend on food and recreation comes much closer to the average amount spend on shelter.
+
+    ```{r}
+    singleId <- joy %>%
+      filter(householdSize == 1) %>%
+      subset(select = "participantId")
+
+    expense_cat <- fi_ave_by_cat%>%
+      filter(bicat == "Expenses" & category != "RentAdjustment") %>%
+      subset(select = c("participantId", "category", "absave")) %>%
+      group_by(participantId, category) %>%
+      summarise(absave = sum(absave))
+
+    single <- left_join(singleId, expense_cat, by = "participantId")
+
+    single %>%
+      ggplot(aes(x = category, y = absave)) +
+      stat_pointinterval(.width = 0.95,
+      .point = median,
+      .interval = qi) +
+      theme_light() +
+      labs(
+        title = "Confidence intervals of single citizens' mean expense by category",
+        subtitle = "Mean Point + Multiple-interval plot")
+    ```
+
+-   If this is the case, do person's joviality correlated with their spending on recreation?
+
+    Yes, they do!
+
+    ```{r}
+    joy_withcat <- left_join(joy, 
+                     expense_cat %>% pivot_wider(names_from = category, names_prefix = "mon_ave_", values_from = absave),
+                     by = "participantId")
+
+    ggscatterstats(data = joy_withcat,
+                        x = mon_ave_Recreation,
+                        y = joviality,
+                        marginal = FALSE,
+                        point.args = list(size = 1, alpha = 0.6, stroke = 0),
+                   title = "Joviality positively correlated with monthly average spending on recreation")
+    ```
+
+-   How about expenses on food?
+
+    No, they don't.
+
+    ```{r}
+    ggscatterstats(data = joy_withcat,
+                        x = mon_ave_Food,
+                        y = joviality,
+                        marginal = FALSE,
+                        point.args = list(size = 1, alpha = 0.6, stroke = 0),
+                   title = "Joviality positively correlated with monthly average spending on recreation")
+    ```

@@ -354,7 +354,7 @@ funnel_plot(
 )
 ```
 
-### unnelPlotR methods: Makeover 1
+### FunnelPlotR methods: Makeover 1
 
 ```{r}
 funnel_plot(

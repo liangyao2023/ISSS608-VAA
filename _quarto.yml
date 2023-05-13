@@ -27,8 +27,8 @@ website:
         menu: 
           - text: "Take Home_Ex 1"
             href: "Take-home_Ex/Take-home_Ex01/Take-home_Ex01.html"
-      - text: "Visual Analytical Project"
-        href: "Visual_Analytical_Project/MC2.html"
+      - text: "Visual Analytic Project"
+        href: "Visual_Analytic_Project/MC2.html"
 
 format:
   html:

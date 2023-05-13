@@ -7,6 +7,10 @@ execute:
   warning: false
   echo: true
   eval: true
+format: 
+  html: 
+    code-fold: true
+    code-summary: "Show the code"
 ---
 
 ## 1. Task and data:
@@ -25,17 +29,17 @@ Contains information about the residents of City of Engagement that have agreed 
 
 -   participantId (integer): unique ID assigned to each participant.
 
--   householdSize (integer): the number of people in the participant\'s household
+-   householdSize (integer): the number of people in the participant's household
 
--   haveKids (boolean): whether there are children living in the participant\'s household.
+-   haveKids (boolean): whether there are children living in the participant's household.
 
--   age (integer): participant\'s age in years at the start of the study.
+-   age (integer): participant's age in years at the start of the study.
 
--   educationLevel (string factor): the participant\'s education level, one of: {\"Low\", \"HighSchoolOrCollege\", \"Bachelors\", \"Graduate\"}
+-   educationLevel (string factor): the participant's education level, one of: {"Low", "HighSchoolOrCollege", "Bachelors", "Graduate"}
 
--   interestGroup (char): a char representing the participant\'s stated primary interest group, one of {\"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\", \"H\", \"I\", \"J\"}. Note: specific topics of interest have been redacted to avoid bias.
+-   interestGroup (char): a char representing the participant's stated primary interest group, one of {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}. Note: specific topics of interest have been redacted to avoid bias.
 
--   joviality (float): a value ranging from \[0,1\] indicating the participant\'s overall happiness level at the start of the study.
+-   joviality (float): a value ranging from \[0,1\] indicating the participant's overall happiness level at the start of the study.
 
 *FinancialJournal.csv*
 
@@ -45,7 +49,7 @@ Contains information about financial transactions.
 
 -   timestamp (datetime): the time when the check-in was logged
 
--   category (string factor): a string describing the expense category, one of {\"Education\", \"Food\", \"Recreation\", \"RentAdjustment\", \"Shelter\", \"Wage\"}
+-   category (string factor): a string describing the expense category, one of {"Education", "Food", "Recreation", "RentAdjustment", "Shelter", "Wage"}
 
 -   amount (double): the amount of the transaction
 
@@ -53,8 +57,10 @@ For explanation of Rent Adjustment, please refer to this [link](https://www.lawi
 
 ## 2. Load packages and data:
 
+The data should be processed by using appropriate **tidyverse** family of packages and the statistical graphics must be prepared using ggplot2 and its extensions.
+
 ```{r}
-pacman::p_load(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic)
+pacman::p_load(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic, ggridges, gganimate, gapminder)
 
 fi <- read.csv("data/FinancialJournal.csv")
 parti <- read.csv("data/Participants.csv")
@@ -64,35 +70,18 @@ parti <- read.csv("data/Participants.csv")
 
 ### 3.1 Check the summary of tables to get a whole picture of the data:
 
-::: panel-tabset
-## Summary table
-
 ```{r}
-#| echo: false
-#| fig-height: 4
 summary(fi)
 summary(parti)
 ```
-
-## Code
-
-```{r}
-#| eval: false
-summary(fi)
-summary(parti)
-```
-:::
 
 ### 3.2 Some further check on each table
 
 ### 3.2.1 Further check of fi table by summarizing by categories:
 
-::: panel-tabset
-## The check table of fi
+-   It's confirmed from the summary table that "wages" and "rent adjustment" got only positive numbers and others are negative numbers.
 
 ```{r}
-#| echo: false
-#| fig-height: 4
 fi$month <- months.Date(strptime(fi$timestamp, "%Y-%m-%d"))
 fi$year <- format(strptime(fi$timestamp, "%Y-%m-%d"), format="%Y")
 fi$yearmonth <- paste(fi$year,fi$month)
@@ -107,148 +96,69 @@ fi %>%
             neg = sum(amount<0))
 ```
 
-## Code
-
-```{r}
-#| eval: false
-fi$month <- months.Date(strptime(fi$timestamp, "%Y-%m-%d"))
-fi$year <- format(strptime(fi$timestamp, "%Y-%m-%d"), format="%Y")
-fi$yearmonth <- paste(fi$year,fi$month)
-
-fi %>%
-  group_by(year, category) %>%
-  summarise(median = median(amount),
-            mean = mean(amount),
-            min = min(amount),
-            max = max(amount),
-            n = n(),
-            neg = sum(amount<0))
-```
+::: callout-warning
+Here the Rent Adjustment amount which have much less N of records compare to other categories need to be carefully treated.
 :::
 
 ### 3.2.2 Further check of parti table:
 
 -   Distribution of joviality:
 
-::: panel-tabset
-## The plot
-
-```{r}
-#| echo: false
-#| fig-height: 4
-#| fig-width: 4
-ggplot(data=parti, aes(x = joviality)) +
-  geom_histogram(bins=10, 
-                 boundary = 100,
-                 color="white", 
-                 fill="grey") +
-  ggtitle("Distribution of joviality")
-```
-
-## Code
-
-```{r}
-#| eval: false
-ggplot(data=parti, aes(x = joviality)) +
-  geom_histogram(bins=10, 
-                 boundary = 100,
-                 color="white", 
-                 fill="grey") +
-  ggtitle("Distribution of joviality")
-```
-:::
+    ```{r}
+    ggplot(data=parti, aes(x = joviality)) +
+      geom_histogram(bins=10, 
+                     boundary = 100,
+                     color="white", 
+                     fill="#4575B4") +
+      theme_light()+
+      ggtitle("Distribution of joviality")
+    ```
 
 -   Distribution of other variables:
 
-::: panel-tabset
-## The plot
+    ```{r}
+    d <- highlight_key(parti)
+    p1 <- ggplot(data=d, aes(x = householdSize)) +
+      geom_bar(stat = "count", 
+               boundary = 100,
+               color="white", 
+               fill="#4575B4") +
+      xlab("Household Size")
 
-```{r}
-#| echo: false
-d <- highlight_key(parti)
-p1 <- ggplot(data=d, aes(x = householdSize)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#4575B4") +
-  xlab("Household Size")
+    p2 <- ggplot(data=d, aes(x = age)) +
+      geom_bar(stat = "count", 
+               boundary = 100,
+               color="white", 
+               fill="#ABD9E9") +
+      xlab("Age")
 
-p2 <- ggplot(data=d, aes(x = age)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#ABD9E9") +
-  xlab("Age")
+    p3 <- ggplot(data=d, aes(x = educationLevel)) +
+      geom_bar(stat = "count", 
+               boundary = 100,
+               color="white", 
+               fill="#FEE090") +
+      xlab("Education Level")+
+      theme(axis.text.x = element_text(angle = 30))
 
-p3 <- ggplot(data=d, aes(x = educationLevel)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#FEE090") +
-  xlab("Education Level")
+    p4 <- ggplot(data=d, aes(x = interestGroup)) +
+      geom_bar(stat = "count", 
+               boundary = 100,
+               color="white", 
+               fill="#F46D43") +
+      xlab("Interest Group")
 
-p4 <- ggplot(data=d, aes(x = interestGroup)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#F46D43") +
-  xlab("Interest Group")
-
-subplot(ggplotly(p1),
-        ggplotly(p2),
-        ggplotly(p3),
-        ggplotly(p4),
-        nrows = 2,
-        titleX = TRUE,
-        margin = 0.1)
-```
-
-## Code
-
-```{r}
-#| eval: false
-d <- highlight_key(parti)
-p1 <- ggplot(data=d, aes(x = householdSize)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#4575B4") +
-  xlab("Household Size")
-
-p2 <- ggplot(data=d, aes(x = age)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#ABD9E9") +
-  xlab("Age")
-
-p3 <- ggplot(data=d, aes(x = educationLevel)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#FEE090") +
-  xlab("Education Level")
-
-p4 <- ggplot(data=d, aes(x = interestGroup)) +
-  geom_bar(stat = "count", 
-           boundary = 100,
-           color="white", 
-           fill="#F46D43") +
-  xlab("Interest Group")
-
-subplot(ggplotly(p1),
-        ggplotly(p2),
-        ggplotly(p3),
-        ggplotly(p4),
-        nrows = 2,
-        titleX = TRUE,
-        margin = 0.1)
-```
-:::
+    subplot(ggplotly(p1),
+            ggplotly(p2),
+            ggplotly(p3),
+            ggplotly(p4),
+            nrows = 2,
+            titleX = TRUE,
+            margin = 0.1)
+    ```
 
 ### 3.3 Combine information into one table
 
-Find montly everage income and expenses of each participant ID, then summarize into a new table named "fi_ave":
+-   Find monthly average income and expenses of each participant ID
 
 ```{r}
 fi_ave_by_cat <- fi%>%
@@ -259,9 +169,15 @@ fi_ave_by_cat$ave = ifelse(fi_ave_by_cat$category == 'RentAdjustment',
                            fi_ave_by_cat$total_amount/12, 
                            fi_ave_by_cat$total_amount/fi_ave_by_cat$n_months)
 
-fi_ave_by_cat$bicat <- ifelse(fi_ave_by_cat$category == 'Wage' | fi_ave_by_cat$category =='RentAdjustment','Income', 'Expenses')
+fi_ave_by_cat$bicat <- ifelse(fi_ave_by_cat$category == 'Wage','Income', 'Expenses')
 fi_ave_by_cat$absave <- abs(fi_ave_by_cat$ave)
 ```
+
+::: callout-note
+Here I divided the amount of "Rent Adjustment" by 12 rather than the unique months of it's record, that's because this amount is an annual amount occurred only once in a year.
+:::
+
+-   Then summarize into a new table named "fi_ave"
 
 ```{r}
 fi_ave <- fi_ave_by_cat%>%
@@ -270,70 +186,47 @@ fi_ave <- fi_ave_by_cat%>%
   pivot_wider(names_from = bicat,values_from = mon_ave, names_prefix = "mon_ave_")
 ```
 
-Combine "fi_ave" with "parti" into a new table named "joy":
-
-::: panel-tabset
-## The summary of table joy:
+-   Combine "fi_ave" with "parti" into a new table named "joy":
 
 ```{r}
-#| echo: false
 joy <- full_join(fi_ave,parti,by="participantId")
 summary(joy)
 ```
-
-## Code
-
-```{r}
-#| eval: false
-joy <- full_join(fi_ave,parti,by="participantId")
-summary(joy)
-```
-:::
 
 # 4. Analysis & Visualization
 
 ## 4.1 Finding demographic characteristics of the city
 
-### 4.1.1 How interest group changes with people growing?
-
-::: panel-tabset
-
-## The Plot
+### 4.1.1 How interest group varies by education levels?
 
 ```{r}
-#| echo: false
-#| fig-height: 4
-#| fig-width: 4
 ggplot(data = joy) +
-  geom_mosaic(aes(x = product(interestGroup), fill= haveKids)) +
-  theme_mosaic() 
-```
-
-## Code
-
-```{r}
-#| eval: false
-ggplot() +
-  geom_mosaic(data = joy, 
-              aes(x = joy$interestGroup, fill=joy$haveKids), 
-              show.legend = FALSE) +
+  geom_mosaic(aes(x = product(interestGroup), fill= educationLevel)) +
   theme_mosaic() +
   scale_fill_manual(values = c("#4575B4", "#ABD9E9", "#FEE090", "#F46D43"))
 ```
-:::
 
-### 4.1.2 
+### 4.1.2 How interest group changes with people's age?
+
+```{r}
+ggplot(joy, aes(x = age, y = interestGroup, fill = interestGroup)) +
+  geom_density_ridges(alpha=0.8, color = "white") +
+  theme_ridges() + 
+  theme(legend.position = "none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8))+
+  scale_fill_manual(values = c("#F4EDCA","#E7B800", "#C4961A",  "#D16103", "#C3D7A4", "#52854C", "#4E84C4", "#ABD9E9", "#FEE090", "#F46D43")) +
+  xlab("Age") +
+  ylab("Interest Groups")
+```
+
+### 4.1.3
 
 ## 4.2 Finding financial characteristics of the city
 
 ### 4.2.1 How monthly average income varies between different education level groups
 
-::: panel-tabset
-## The Plot
-
 ```{r}
-#| echo: false
-#| fig-height: 4
 ggbetweenstats(
   data = joy,
   x = educationLevel, 
@@ -346,33 +239,10 @@ ggbetweenstats(
   messages = FALSE
 )
 ```
-
-## Code
-
-```{r}
-#| eval: false
-ggbetweenstats(
-  data = joy,
-  x = educationLevel, 
-  y = mon_ave_Income,
-  type = "p",
-  mean.ci = TRUE, 
-  pairwise.comparisons = TRUE, 
-  pairwise.display = "s",
-  p.adjust.method = "fdr",
-  messages = FALSE
-)
-```
-:::
 
 ### 4.2.2 How monthly expenses varies between different household size
 
-::: panel-tabset
-## The Plot
-
 ```{r}
-#| echo: false
-#| fig-height: 4
 ggbetweenstats(
   data = joy,
   x = householdSize, 
@@ -385,33 +255,10 @@ ggbetweenstats(
   messages = FALSE
 )
 ```
-
-## Code
-
-```{r}
-#| eval: false
-ggbetweenstats(
-  data = joy,
-  x = householdSize, 
-  y = mon_ave_Expenses,
-  type = "p",
-  mean.ci = TRUE, 
-  pairwise.comparisons = TRUE, 
-  pairwise.display = "s",
-  p.adjust.method = "fdr",
-  messages = FALSE
-)
-```
-:::
 
 ### 4.2.3 Monthly average amount of expenses by categories
 
-::: panel-tabset
-## The Plot
-
 ```{r}
-#| echo: false
-#| fig-height: 4
 ggbetweenstats(
   data = filter(fi_ave_by_cat, bicat != 'Income'),
   x = category, 
@@ -425,84 +272,68 @@ ggbetweenstats(
   ylab = "monthly average amount of expenses"
 )
 ```
-
-## Code
-
-```{r}
-#| eval: false
-ggbetweenstats(
-  data = filter(fi_ave_by_cat, bicat != 'Income'),
-  x = category, 
-  y = absave,
-  type = "p",
-  mean.ci = TRUE, 
-  pairwise.comparisons = TRUE, 
-  pairwise.display = "s",
-  p.adjust.method = "fdr",
-  messages = FALSE,
-  ylab = "monthly average amount of expenses"
-)
-```
-:::
 
 ## 4.3 Finding correlation between characteristics and joviality
 
-### 4.3.1 Do people earn more feel happier? Or do people spend more feel happier?
-
-::: panel-tabset
-## The Plot
+### 4.3.1 Do people earn more feel happier?
 
 ```{r}
-#| echo: false
-#| fig-height: 4
-#| fig-width: 5
-p1 <- ggscatterstats(data = joy,
+ggplot(joy, aes(x = mon_ave_Income, y = joviality, 
+                      size = householdSize, 
+                      colour = haveKids)) +
+  geom_point(alpha = 0.6) +
+  scale_colour_manual(values = c("#4E84C4", "#FEE090")) +
+  scale_size(range = c(2, 5))+
+  labs(title = 'Do people earn more feel happier?', 
+       x = 'Monthly average income', 
+       y = 'Joviality')
+```
+
+```{r}
+ggscatterstats(data = joy,
                      x = mon_ave_Income,
                      y = joviality,
                      marginal = FALSE,
-                     point.args = list(size = 1, alpha = 0.6, stroke = 0))
+                     point.args = list(size = 1, alpha = 0.6, stroke = 0),
+               title = "Joviality negatively correlated with monthly average income")
+```
 
-p2<- ggscatterstats(data = joy,
+```{r}
+grouped_ggscatterstats(
+  data = joy,
+  x = mon_ave_Income,
+  y = joviality,
+  marginal = FALSE,
+  point.args = list(size = 1, alpha = 0.6, stroke = 0),
+  grouping.var = educationLevel,
+  type = "r",
+  annotation.args = list(title = "Relationship between joviality and income by education level"),
+  plotgrid.args = list(nrow = 2, ncol = 2)
+)
+```
+
+### 4.3.2 Or do people spend more feel happier?
+
+```{r}
+ggscatterstats(data = joy,
                     x = mon_ave_Expenses,
                     y = joviality,
                     marginal = FALSE,
-                    point.args = list(size = 1, alpha = 0.6, stroke = 0))
-
-subplot(ggplotly(p1),
-        ggplotly(p2),
-        nrows = 2,
-        titleX = T,
-        margin = 0.1)
+                    point.args = list(size = 1, alpha = 0.6, stroke = 0),
+               title = "Joviality positively correlated with monthly average expenses")
 ```
-
-## Code
 
 ```{r}
-#| eval: false
-p1 <- ggscatterstats(data = joy,
-                     x = mon_ave_Income,
-                     y = joviality,
-                     marginal = FALSE,
-                     point.args = list(size = 1, alpha = 0.6, stroke = 0))
-
-p2<- ggscatterstats(data = joy,
-                    x = mon_ave_Expenses,
-                    y = joviality,
-                    marginal = FALSE,
-                    point.args = list(size = 1, alpha = 0.6, stroke = 0))
-
-subplot(ggplotly(p1),
-        ggplotly(p2),
-        nrows = 2,
-        titleX = T,
-        margin = 0.1)
+grouped_ggscatterstats(
+  ## arguments relevant for ggscatterstats
+  data = joy,
+  x = mon_ave_Expenses,
+  y = joviality,
+  marginal = FALSE,
+  point.args = list(size = 1, alpha = 0.6, stroke = 0),
+  grouping.var = householdSize,
+  type = "r",
+  annotation.args = list(title = "Relationship between joviality and expenses by household size"),
+  plotgrid.args = list(nrow = 1)
+)
 ```
-:::
-
-### 4.3.2 How happy are people with different interest?
-
-```{r}
-
-```
-
-### 

@@ -7,6 +7,10 @@ execute:
   warning: false
   echo: true
   eval: true
+format: 
+  html: 
+    code-fold: true
+    code-summary: "Show the code"
 ---
 
 # Visualizing and Analyzing Network Data
@@ -33,7 +37,7 @@ glimpse(GAStech_edges)
 ```
 
 ::: callout-warning
-The output report of GAStech_edges above reveals that the *SentDate* is treated as \"Character\" data type instead of *date* data type. This is an error! Before we continue, it is important for us to change the data type of *SentDate* field back to \"Date\"\" data type.
+The output report of GAStech_edges above reveals that the *SentDate* is treated as "Character" data type instead of *date* data type. This is an error! Before we continue, it is important for us to change the data type of *SentDate* field back to "Date"" data type.
 :::
 
 ### Wrangling time
@@ -82,7 +86,7 @@ GAStech_edges_aggregated <- GAStech_edges %>%
 
 ## Creating network objects using **tidygraph**
 
-###  The **tbl_graph** object
+### The **tbl_graph** object
 
 Two functions of **tidygraph** package can be used to create network objects, they are:
 
@@ -120,7 +124,7 @@ GAStech_graph
 
 -   The output above reveals that *GAStech_graph* is a tbl_graph object with 54 nodes and 4541 edges.
 
--   The command also prints the first six rows of \"Node Data\" and the first three of \"Edge Data\".
+-   The command also prints the first six rows of "Node Data" and the first three of "Edge Data".
 
 -   It states that the Node Data is **active**. The notion of an active tibble within a tbl_graph object makes it possible to manipulate the data in one tibble at a time.
 
@@ -136,7 +140,7 @@ GAStech_graph %>%
 
 [**ggraph**](https://ggraph.data-imaginist.com/) is an extension of **ggplot2**, making it easier to carry over basic ggplot skills to the design of network graphs.
 
-As in all network graph, there are three main aspects to a **ggraph**\'s network graph, they are:
+As in all network graph, there are three main aspects to a **ggraph**'s network graph, they are:
 
 -   [nodes](https://cran.r-project.org/web/packages/ggraph/vignettes/Nodes.html),
 
@@ -173,7 +177,7 @@ g + theme_graph(background = 'grey10',
                 text_colour = 'white')
 ```
 
-### Working with **ggraph**\'s layouts
+### Working with **ggraph**'s layouts
 
 **ggraph** support many layout for standard used, they are: star, circle, nicely (default), dh, gem, graphopt, grid, mds, spahere, randomly, fr, kk, drl and lgl. Figures below and on the right show layouts supported by `ggraph()`.
 
@@ -301,7 +305,7 @@ g + facet_nodes(~Department)+
 
 ### Computing centrality indices
 
-Centrality measures are a collection of statistical indices use to describe the relative important of the actors are to a network. There are four well-known centrality measures, namely: degree, betweenness, closeness and eigenvector. It is beyond the scope of this hands-on exercise to cover the principles and mathematics of these measure here. Students are encouraged to refer to *Chapter 7: Actor Prominence* of **A User\'s Guide to Network Analysis in R** to gain better understanding of theses network measures.
+Centrality measures are a collection of statistical indices use to describe the relative important of the actors are to a network. There are four well-known centrality measures, namely: degree, betweenness, closeness and eigenvector. It is beyond the scope of this hands-on exercise to cover the principles and mathematics of these measure here. Students are encouraged to refer to *Chapter 7: Actor Prominence* of **A User's Guide to Network Analysis in R** to gain better understanding of theses network measures.
 
 ```{r}
 g <- GAStech_graph %>%
@@ -352,9 +356,9 @@ g + theme_graph()
 
 -   *visNetwork()* function uses a nodes list and edges list to create an interactive graph.
 
-    -   The nodes list must include an \"id\" column, and the edge list must have \"from\" and \"to\" columns.
+    -   The nodes list must include an "id" column, and the edge list must have "from" and "to" columns.
 
-    -   The function also plots the labels for the nodes, using the names of the actors from the \"label\" column in the node list.
+    -   The function also plots the labels for the nodes, using the names of the actors from the "label" column in the node list.
 
 -   The resulting graph is fun to play around with.
 

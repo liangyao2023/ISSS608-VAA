@@ -23,12 +23,15 @@ website:
             href: "Handson_Ex/Handson_Ex04/Handson_Ex04.html"
           - text: "Hands on_Ex 5"
             href: "Handson_Ex/Handson_Ex05/Handson_Ex05.html"
+          - text: "Hands on_Ex 6"
+            href: "Handson_Ex/Handson_Ex06/Handson_Ex06.html"
       - text: "Take Home_Ex"
         menu: 
           - text: "Take Home_Ex 1"
             href: "Take-home_Ex/Take-home_Ex01/Take-home_Ex01.html"
-      - text: "Visual Analytic Project"
-        href: "Visual_Analytic_Project/MC2.html"
+          - text: "Take Home_Ex 2"
+            href: "Take-home_Ex/Take-home_Ex02/Take-home_Ex02.html"
+
 
 format:
   html:

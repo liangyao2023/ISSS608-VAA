@@ -123,6 +123,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     "search-submit-button-title": "Submit"
   }
 }</script>
+<script src="../../site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<link href="../../site_libs/vis-9.1.0/vis-network.min.css" rel="stylesheet">
+<script src="../../site_libs/vis-9.1.0/vis-network.min.js"></script>
+<script src="../../site_libs/visNetwork-binding-2.1.2/visNetwork.js"></script>
 
 
 <link rel="stylesheet" href="../../styles.css">
@@ -231,21 +235,24 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#find-the-nodes-and-edges" id="toc-find-the-nodes-and-edges" class="nav-link" data-scroll-target="#find-the-nodes-and-edges">3.1 Find the nodes and edges:</a></li>
   <li><a href="#data-wranggling" id="toc-data-wranggling" class="nav-link" data-scroll-target="#data-wranggling">3.2 Data wranggling</a></li>
   <li><a href="#check-and-deal-with-na" id="toc-check-and-deal-with-na" class="nav-link" data-scroll-target="#check-and-deal-with-na">3.2.1 Check and deal with NA:</a></li>
-  <li><a href="#aggregate-by-links" id="toc-aggregate-by-links" class="nav-link" data-scroll-target="#aggregate-by-links">3.2.2 Aggregate by links?:</a></li>
-  <li><a href="#combine-information-into-one-table" id="toc-combine-information-into-one-table" class="nav-link" data-scroll-target="#combine-information-into-one-table">3.3 Combine information into one table</a></li>
+  <li><a href="#wrangling-attributes" id="toc-wrangling-attributes" class="nav-link" data-scroll-target="#wrangling-attributes">3.2.3 Wrangling attributes:</a></li>
   </ul></li>
   <li><a href="#analysis-visualization" id="toc-analysis-visualization" class="nav-link" data-scroll-target="#analysis-visualization">4. Analysis &amp; Visualization</a>
   <ul class="collapse">
   <li><a href="#visualizing-original-links" id="toc-visualizing-original-links" class="nav-link" data-scroll-target="#visualizing-original-links">4.1 Visualizing original links</a>
   <ul class="collapse">
-  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section">4.1.1 ?</a></li>
-  <li><a href="#section-1" id="toc-section-1" class="nav-link" data-scroll-target="#section-1">4.1.2 ?</a></li>
+  <li><a href="#build-a-network-graph-of-those-selected-hscodes" id="toc-build-a-network-graph-of-those-selected-hscodes" class="nav-link" data-scroll-target="#build-a-network-graph-of-those-selected-hscodes">4.1.1 Build a network graph of those selected hscodes:</a></li>
+  <li><a href="#find-communities" id="toc-find-communities" class="nav-link" data-scroll-target="#find-communities">4.1.2 Find communities</a></li>
   </ul></li>
   <li><a href="#finding-pattern" id="toc-finding-pattern" class="nav-link" data-scroll-target="#finding-pattern">4.2 Finding pattern</a>
   <ul class="collapse">
-  <li><a href="#new-patterns" id="toc-new-patterns" class="nav-link" data-scroll-target="#new-patterns">4.2.1 new patterns?</a></li>
+  <li><a href="#new-patterns" id="toc-new-patterns" class="nav-link" data-scroll-target="#new-patterns">4.2.1 new patterns</a></li>
   <li><a href="#visualizing" id="toc-visualizing" class="nav-link" data-scroll-target="#visualizing">4.2.2 Visualizing</a></li>
   </ul></li>
+  </ul></li>
+  <li><a href="#evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided" id="toc-evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided" class="nav-link" data-scroll-target="#evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided">5. Evaluate the sets of predicted knowledge graph links FishEye has provided</a>
+  <ul class="collapse">
+  <li><a href="#read-provided-json-files" id="toc-read-provided-json-files" class="nav-link" data-scroll-target="#read-provided-json-files">5.1 Read provided json files:</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -279,7 +286,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">May 20, 2023</p>
+      <p class="date-modified">May 24, 2023</p>
     </div>
   </div>
     
@@ -303,19 +310,22 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><p>Evaluate the sets of predicted knowledge graph links FishEye has provided using visual analytics. Which sets are most reliable for completing the graph? Limit your response to 600 words and 6 images.</p></li>
 <li><p>Illustrate how your visual analytics approach can be used to identify new patterns and/or anomalies that are present in the knowledge graph after you have added the links you deemed reliable in question 2. Limit your response to 300 words and 4 images.</p></li>
 <li><p>Identify companies that fit a pattern of illegal fishing. Use visualizations to support your conclusions and your confidence in them. Limit your response to 300 words and 4 images.</p></li>
-<li><p>Reflection: What was the most difficult aspect of working with this knowledge graph? Did you have the tools and resources you needed to complete the challenge? What additional resources would have helped you? Limit your response to 300 words</p></li>
 </ol>
 </section>
 </section>
 <section id="load-packages-and-data" class="level2">
 <h2 class="anchored" data-anchor-id="load-packages-and-data">2. Load packages and data:</h2>
-<p>The data should be processed by using appropriate <strong>tidyverse</strong> family of packages and the statistical graphics must be prepared using ggplot2 and its extensions.</p>
 <div class="cell">
 <details>
 <summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic, ggridges, gganimate,ggdist,jsonlite)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>mc2 <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(<span class="st">"data/mc2_challenge_graph.json"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(igraph, tidygraph, ggraph, visNetwork, lubridate, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>               tidyverse, graphlayouts, jsonlite)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mc2 <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(<span class="st">"data/mc2_challenge_graph.json"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 </section>
@@ -326,18 +336,40 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="cell">
 <details>
 <summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#view(mc2[["nodes"]])</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>mc2_nodes <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mc2<span class="sc">$</span>nodes) <span class="sc">%&gt;%</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, shpcountry, rcvcountry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#view(mc2[["nodes"]])</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>mc2_nodes <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mc2<span class="sc">$</span>nodes) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, shpcountry, rcvcountry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <div class="cell">
 <details>
 <summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#view(mc2[["links"]])</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>mc2_edges <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mc2<span class="sc">$</span>links) <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(source, target, weightkg, hscode, arrivaldate, volumeteu, valueofgoods_omu, valueofgoodsusd)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#view(mc2[["links"]])</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mc2_edges <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mc2<span class="sc">$</span>links) <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">arrivaldate =</span> <span class="fu">ymd</span>(arrivaldate)) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">year</span>(arrivaldate)) <span class="sc">%&gt;%</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(source, target, weightkg, hscode, arrivaldate, year, volumeteu, valueofgoods_omu, valueofgoodsusd) <span class="sc">%&gt;%</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(mc2_edges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 5,309,087
+Columns: 9
+$ source           &lt;chr&gt; "AquaDelight Inc and Son's", "AquaDelight Inc and Son…
+$ target           &lt;chr&gt; "BaringoAmerica Marine Ges.m.b.H.", "BaringoAmerica M…
+$ weightkg         &lt;int&gt; 4780, 6125, 10855, 11250, 11165, 11290, 9000, 19490, …
+$ hscode           &lt;chr&gt; "630630", "630630", "470710", "470710", "470710", "47…
+$ arrivaldate      &lt;date&gt; 2034-02-12, 2034-03-13, 2028-02-07, 2028-02-23, 2028…
+$ year             &lt;dbl&gt; 2034, 2034, 2028, 2028, 2028, 2028, 2028, 2028, 2028,…
+$ volumeteu        &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+$ valueofgoods_omu &lt;dbl&gt; 141015, 141015, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ valueofgoodsusd  &lt;dbl&gt; NA, NA, NA, NA, NA, NA, 87110, 188140, NA, 221110, 58…</code></pre>
+</div>
 </div>
 </section>
 <section id="data-wranggling" class="level3">
@@ -346,45 +378,23 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <section id="check-and-deal-with-na" class="level3">
 <h3 class="anchored" data-anchor-id="check-and-deal-with-na">3.2.1 Check and deal with NA:</h3>
 <ul>
-<li>It’s confirmed from the summary table that “wages” and “rent adjustment” got only positive numbers and other categories are negative numbers.</li>
+<li>Create a numeric ID for nodes and change original id column name to “label”.</li>
 </ul>
-<div class="cell">
-
-</div>
-<div class="callout-warning callout callout-style-default callout-captioned">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-caption-container flex-fill">
-Warning
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Here is warning message.</p>
-</div>
-</div>
-</section>
-<section id="aggregate-by-links" class="level3">
-<h3 class="anchored" data-anchor-id="aggregate-by-links">3.2.2 Aggregate by links?:</h3>
+<!-- -->
 <ul>
-<li><p>Distribution of resources:</p>
-<div class="cell">
-
-</div></li>
-<li><p>Distribution of taragets:</p>
-<div class="cell">
-
-</div></li>
-</ul>
-</section>
-<section id="combine-information-into-one-table" class="level3">
-<h3 class="anchored" data-anchor-id="combine-information-into-one-table">3.3 Combine information into one table</h3>
-<ul>
-<li>.</li>
+<li>Deal with NA and check data type in edges.</li>
 </ul>
 <div class="cell">
-
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#mc2_link &lt;- select(mc2_edges %&gt;% </span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#                     drop_na(valueofgoodsusd) %&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">#                     mutate(arrivaldate = ymd(arrivaldate)) %&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                     mutate(Weekday = wday(arrivaldate,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#                        label = TRUE))</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#                   , -valueofgoods_omu)</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#glimpse(mc2_link)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <div class="callout-note callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
@@ -392,40 +402,189 @@ Warning
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
-Note
+Notes
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Here is a note</p>
+<p>Here I dropped any NA in nodes and any NA in ‘valueofgoodsusd’ column of edges. I also dropped the ‘valueofgood_omu’ column since there were too many NA rows.</p>
+<p>And the ‘arrivaldate’ column of edges is treated as ‘chr’ datatype, would need to be changed to ‘date’ type.</p>
 </div>
 </div>
 <ul>
-<li>Then summarize into a new table named “fi_ave” in which transpose the monthly average Income/Expenses categories into column names;</li>
+<li>Match nodes’ numeric id to source and target in edges and change original column names to “source_label” &amp; “target_label.</li>
 </ul>
 <div class="cell">
-
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#colnames(mc2_link)[1] &lt;- "source_label"</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#colnames(mc2_link)[2] &lt;- "target_label"</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#mc2_link$source &lt;- with(mc2_nodes, id[match(mc2_link$source_label, label)])</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#mc2_link$target &lt;- with(mc2_nodes, id[match(mc2_link$target_label, label)])</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#glimpse(mc2_link)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
+</section>
+<section id="wrangling-attributes" class="level3">
+<h3 class="anchored" data-anchor-id="wrangling-attributes">3.2.3 Wrangling attributes:</h3>
 <ul>
-<li>Combine “fi_ave” with “parti” into a new table named “joy”.</li>
-</ul>
+<li><p>Find hscode with most edges:</p>
 <div class="cell">
-
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>hscode_count <span class="ot">&lt;-</span>  mc2_edges <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hscode) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(hscode) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(count))</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>hscode_select <span class="ot">&lt;-</span> <span class="fu">pull</span>(<span class="fu">select</span>(hscode_count[hscode_count<span class="sc">$</span>count <span class="sc">&gt;</span> <span class="dv">50000</span>, ], hscode),hscode)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>hscode_select</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "306170" "950300" "870899" "611020" "940360" "304620" "160414" "640299"
+ [9] "870323" "640399" "940161" "620462"</code></pre>
 </div>
+</div></li>
+</ul>
+<!-- -->
+<ul>
+<li><p>Distribution of edges by years:</p>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> mc2_edges, <span class="fu">aes</span>(<span class="at">x=</span>year)) <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">7</span>, <span class="at">binwidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Year"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="384"></p>
+</div>
+</div></li>
+</ul>
 </section>
 </section>
 <section id="analysis-visualization" class="level1">
 <h1>4. Analysis &amp; Visualization</h1>
 <section id="visualizing-original-links" class="level2">
 <h2 class="anchored" data-anchor-id="visualizing-original-links">4.1 Visualizing original links</h2>
-<section id="section" class="level3">
-<h3 class="anchored" data-anchor-id="section">4.1.1 ?</h3>
-<p>From the chart below we can find that different interest group attract people with quite different education level.</p>
+<section id="build-a-network-graph-of-those-selected-hscodes" class="level3">
+<h3 class="anchored" data-anchor-id="build-a-network-graph-of-those-selected-hscodes">4.1.1 Build a network graph of those selected hscodes:</h3>
 <div class="cell">
-
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>mc2_edges_aggregated <span class="ot">&lt;-</span> mc2_edges <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(hscode <span class="sc">==</span> hscode_select) <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(source, target, hscode, year) <span class="sc">%&gt;%</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">weights =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(source<span class="sc">!=</span>target) <span class="sc">%&gt;%</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(weights <span class="sc">&gt;</span> <span class="dv">20</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>id1 <span class="ot">&lt;-</span> mc2_edges_aggregated <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(source,hscode) <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">id =</span> source)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>id2 <span class="ot">&lt;-</span> mc2_edges_aggregated <span class="sc">%&gt;%</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(target,hscode) <span class="sc">%&gt;%</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">id =</span> target)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>mc2_nodes_extracted <span class="ot">&lt;-</span> <span class="fu">rbind</span>(id1, id2) <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>mc2_graph <span class="ot">&lt;-</span> <span class="fu">tbl_graph</span>(<span class="at">nodes =</span> mc2_nodes_extracted,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">edges =</span> mc2_edges_aggregated,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">directed =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="fu">ggraph</span>(mc2_graph, </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">layout =</span> <span class="st">"nicely"</span>) <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_edge_link</span>(<span class="fu">aes</span>(<span class="at">width=</span>weights), </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_edge_width</span>(<span class="at">range =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="dv">2</span>)) <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_node_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> hscode), </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">size =</span> <span class="dv">1</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>g <span class="sc">+</span> <span class="fu">theme_graph</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="576"></p>
+</div>
+</div>
+<p>Build a facet graph by years to see the change of network in different years:</p>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set_graph_style</span>() </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="fu">ggraph</span>(mc2_graph, </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">layout =</span> <span class="st">"nicely"</span>) <span class="sc">+</span> </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_edge_link</span>(<span class="fu">aes</span>(<span class="at">width=</span>weights), </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_edge_width</span>(<span class="at">range =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="dv">5</span>)) <span class="sc">+</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_node_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> hscode), <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">'bottom'</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>g <span class="sc">+</span> <span class="fu">facet_edges</span>(<span class="sc">~</span>year)<span class="sc">+</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">th_foreground</span>(<span class="at">foreground =</span> <span class="st">"grey80"</span>,  </span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">border =</span> <span class="cn">TRUE</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>Build a facet_nodes graph by hscode to see the difference:</p>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set_graph_style</span>()</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="fu">ggraph</span>(mc2_graph, </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">layout =</span> <span class="st">"nicely"</span>) <span class="sc">+</span> </span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_edge_link</span>(<span class="fu">aes</span>(<span class="at">width=</span>weights), </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_edge_width</span>(<span class="at">range =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="dv">5</span>)) <span class="sc">+</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_node_point</span>(<span class="fu">aes</span>(), </span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">size =</span> <span class="fl">0.5</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>g <span class="sc">+</span> <span class="fu">facet_nodes</span>(<span class="sc">~</span>hscode)<span class="sc">+</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">th_foreground</span>(<span class="at">foreground =</span> <span class="st">"grey80"</span>,  </span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">border =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">'bottom'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="768"></p>
+</div>
 </div>
 </section>
-<section id="section-1" class="level3">
-<h3 class="anchored" data-anchor-id="section-1">4.1.2 ?</h3>
+<section id="find-communities" class="level3">
+<h3 class="anchored" data-anchor-id="find-communities">4.1.2 Find communities</h3>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> mc2_graph <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">community =</span> <span class="fu">as.factor</span>(<span class="fu">group_edge_betweenness</span>(<span class="at">weights =</span> weights, <span class="at">directed =</span> <span class="cn">TRUE</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggraph</span>(<span class="at">layout =</span> <span class="st">"fr"</span>) <span class="sc">+</span> </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_edge_link</span>(<span class="fu">aes</span>(<span class="at">width=</span>weights), </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_edge_width</span>(<span class="at">range =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="dv">5</span>)) <span class="sc">+</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_node_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> community))  </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>g <span class="sc">+</span> <span class="fu">theme_graph</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="576"></p>
+</div>
+</div>
 <div class="cell">
 
 </div>
@@ -434,10 +593,39 @@ Note
 <section id="finding-pattern" class="level2">
 <h2 class="anchored" data-anchor-id="finding-pattern">4.2 Finding pattern</h2>
 <section id="new-patterns" class="level3">
-<h3 class="anchored" data-anchor-id="new-patterns">4.2.1 new patterns?</h3>
-<p>Citizens’ monthly income apparently goes up with their educational level, indicating local labor market do care about employees’ education background.</p>
+<h3 class="anchored" data-anchor-id="new-patterns">4.2.1 new patterns</h3>
+<p>Prepare data for interactive network graph.</p>
 <div class="cell">
-
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>mc2_edges_aggregated<span class="sc">$</span>from <span class="ot">&lt;-</span> <span class="fu">with</span>(mc2_nodes, id[<span class="fu">match</span>(mc2_edges_aggregated<span class="sc">$</span>source, id)])</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>mc2_edges_aggregated<span class="sc">$</span>to <span class="ot">&lt;-</span> <span class="fu">with</span>(mc2_nodes, id[<span class="fu">match</span>(mc2_edges_aggregated<span class="sc">$</span>target, id)])</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>mc2_edges_aggregated2 <span class="ot">&lt;-</span> mc2_edges_aggregated <span class="sc">%&gt;%</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(from, to) <span class="sc">%&gt;%</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">weights =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(from<span class="sc">!=</span>to) <span class="sc">%&gt;%</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(weights <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  ungroup</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visNetwork</span>(mc2_nodes_extracted <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>             <span class="fu">select</span>(id)<span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>             <span class="fu">distinct</span>(),</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>           mc2_edges_aggregated2) <span class="sc">%&gt;%</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">visIgraphLayout</span>(<span class="at">layout =</span> <span class="st">"layout_with_fr"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">visOptions</span>(<span class="at">highlightNearest =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>             <span class="at">nodesIdSelection =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">visLegend</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">visLayout</span>(<span class="at">randomSeed =</span> <span class="dv">123</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-a3b16d90541c83087135" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-a3b16d90541c83087135">{"x":{"nodes":{"id":["Adair Salmon ОАО Family","Adriatic Tuna Seabass BV Transit","Aqua Azul GmbH & Co. KG Freight ","Aqua Azul LC International","Arena Azul S.A. de C.V.","Arena del Sol Pic","Arunachal Pradesh s Kga","Asiotr GmbH & Co. KG","Barents Sea Cod CJSC Export","Black Sea Carp Ltd","Blue Horizon Family &","Brisa del Este ОАО","Caracola del Sol Incorporated","Chuan gou  N.V. Delivery","Coastal Cruisers Pic Shipping","Coral del Mar Logistics","Costa de Oro CJSC","Daniel Ferry N.V. Transit","Danish Plaice BV Investment","Danish Shrimp Kga Solutions","Diao er  Limited Liability Company","Dry Creek Pic Marine biology","Dutch Eel AB Holdings","Eirene AB Marine sanctuary","Estrella de la Costa SRL","Fisherman's Bounty AG Solutions","Fresh Limited Liability Company","Goa   Seaside Sp Overseas","Great Ruaha River  Brothers","Greek Octopus SRL Logistics","Gujarat   Tide NV Solutions","Ianira Starfish Sagl Import","Icelandic Cod Pier ОАО Transport","Isla del Este N.V.","Isla del Mar Ltd. Liability Co Enterprises","James Leska Ges.m.b.H. Marine","Jharkhand  Ltd. Liability Co Worldwide","Kafue River  Express Mussel","Kilimajaro Slopes   Incorporated and Son's","Lake Motoso  Sagl Brothers","Madhya Pradesh  Market LLC","Makumba Ltd. Liability Co","Manipur  Market Corporation Cargo","Mar de la Vida Krill","Mar de la Vida S.p.A.","Mar y Luna Sagl","Marine Masterminds Dry dock","Marine Masterminds SE Saltwater","Nautical Navigators Limited Liability Company Holdings","Neptune's Harvest A/S Hijiki","Neptune's Realm NV Navigation","Nile   S.A. de C.V.","Náutica del Norte Kga Holdings","Náutica del Sol Brothers","Oceanic Oracle GmbH & Co. KG","OceanicOrigin Foods Co Consulting","Okavango Delta  Cargo ship","Ola de la Costa Ges.m.b.H.","Orange River   GmbH & Co. KG Shipping","Paradera S.A. de C.V.","Pez Dorado Inc Freight ","Pez Dorado Plc Seaport","Playa de Arena OJSC Express","Playa del Mar Corporation","Playa del Tesoro BV","Playa del Tesoro OJSC","Saltwater Sanctuary ОАО Merchants","Saltwater Sisters Inc Seafaring","Saltwater Symphony S.A. de C.V.","Sea Breezes S.A. de C.V. Freight ","Sea Seekers Marine sanctuary","Selous Game Reserve  A/S","Shou gan  Oyj Overseas","Spanish Shrimp A/S Marine","The Salted Pearl AG Marine conservation","The Salty Pearl Kga","Tristen Jetty Company Solutions","Turkish Sword NV Ocean","Uttar Pradesh s CJSC","Wave Watchers Ltd. Liability Co","Yenisei  Eel GmbH & Co. KG Services","bǐ mù yú Sagl Distribution","lú yú Ltd. Corporation","nián yú Ltd. Corporation","suō yú Incorporated Brothers","hǎi dǎn Corporation Wharf","lǐyú GmbH & Co. KG Logistics","Punjab Sea  CJSC Estuary","Arunachal Pradesh s Brine","Mandalore S.A. de C.V. Logistics","Océano de Coral Corporation Express","Saltwater Supreme ОАО Forwading","Panope Limited Liability Company","Brisa del Este BV","Coral Cove BV Delivery","Sea Breezes GmbH & Co. KG Shark","Madagascar Coast  AG Freight ","Mar del Este CJSC","Pelagia Ltd. Corporation Family","Niger River   NV Delivery","Caracola del Sol Services","-2018","Black Sea Tuna Sagl","Brisa del Mar LC","Dubingiai Ltd. Liability Co","Marine Mates Cruise ship","ReefRider Foods Ltd. Corporation Family","AquaDelight N.V. Coral Reef","Pao gan SE Seal","-2926","Sailors and Surfers Incorporated Enterprises","Estrella del Sol Incorporated Aqua","Pao gan LC Freight ","Portuguese Tuna Incorporated Marine","The Sea Turtle GmbH & Co. KG","páng xiè S.A. de C.V. Line","Estrella del Mar Tilapia Oyj Marine","Uttarakhand  Market Limited Liability Company Nautical","Volga River LLC Enterprises","Coastal Castaway Coast Corporation Worldwide","Costa de la Felicidad Shipping","Madhya Pradesh  Market - Oyj Carriers","Selkie Ltd. Liability Co","Orange River   Incorporated Shipping","-2772","-8000","Haryana s Sagl Transport","Kong zhong diao yu  Express Charter Boat ","Oceanic Opportunities Incorporated Line","-2907","-54","Ancla Azul Transportation Seafaring","Holdings Ltd. Liability Co","Playa de la Felicidad SE","SeaBass &  SE Tanker","SilverStream CJSC Marine conservation","Orange River Mouth   LLC","Arena del Mar Marine Marine biology","Niger Bend   Limited Liability Company Marine ecology","Tamil Nadu   Corporation Compass","Selous Game Reserve  S.A. de C.V.","Náutica del Sol Corporation","Sea Breeze Corporation Marine sanctuary","-1121","Fisherman's Best Marine conservation","Mar del Placer Manatee","Playa de la Luna Incorporated","Lake Tanganyika  Inc Jetty","Isla del Mar NV Forwading","Black Sea Tuna Snapper","Cape of Good Hope   S.p.A.","Eukrante Marine biology A/S Express","French Sole Limited Liability Company Logistics","Arena Azul SE Nautical","Mar de la Vida LC","-2821","-2917","-703","Arunachal Pradesh s Ltd. Corporation Coast","Konkan Coast  SRL Logistics","lú yú GmbH & Co. KG","Fresh Wharf SRL Consulting","-2105","-267","Togo  S.A. de C.V.","Kong zhong diao yu  Ges.m.b.H.","Estrella del Mar N.V. United","-37","SeaTree Ltd. Liability Co Holdings","Turkish Salmon A/S Marine","Rybachit Sagl and Son's","Harbah Ltd. Liability Co Consultants","-3802","Nile Crocodile  Sailboat Sp Line","West Bengal  Company Nori","Saltwater Supreme Pelican Ltd Enterprises","Belgian Shrimps Corp Marine life"],"x":[0.86368302564987,0.202557938060163,0.952273189357554,0.0606699687107501,0.759505324292468,-0.534868963553552,-0.401631821406206,-0.462719407141977,0.184747221130262,0.50771604829808,-0.754055840003434,-0.42270534462434,-0.80852752370004,-0.249901707939752,0.0569317288047808,-0.311440220194914,-0.0714730882506633,-0.188818619290842,0.191913154688687,-0.91779411316345,1,0.447696959737574,-0.420149785915182,0.661023798935541,-0.705864571660789,0.365712982188756,0.503035845942612,-0.290685950179976,-0.553696021833365,0.0978075623746806,-0.941941679739299,0.531683907734595,0.419833324727616,-0.487919400186108,0.321678134236185,0.147246984799772,0.647498654649003,-0.917483887174424,-0.442168422003411,-0.495623442530215,0.448786438280646,0.32976259069595,-0.754747493147213,-0.22377038582465,-0.214715919278949,0.918685603151534,0.908670273519765,0.233356096716443,-1,-0.375244166553857,0.701782460822339,-0.376017361128513,0.264444161368195,-0.490867515692475,-0.580518026800589,0.371741240291592,-0.0593450065068748,0.678462111942,0.00519818737492583,-0.951030267019789,-0.804788929361936,0.0521272137670459,0.577203255142803,0.198662460024366,0.633007429757456,-0.085970641182443,-0.85149611030165,0.15393665283301,0.944642603714262,0.318919669899991,-0.737657515305319,0.496479429102842,-0.681695107868877,0.16138432462591,-0.485003237066874,0.25150622999378,0.445713788050049,-0.723547229687163,0.390916869982867,0.534719414564701,-0.782101460533075,-0.619959938053573,0.833648896832597,0.250647648515851,0.322736262489546,0.515361856754132,-0.250541623748135,0.926655219172261,0.134291876244708,0.741840901356007,0.796971859427596,0.831841504171616,0.425157596258372,0.35806831886529,0.311400052963519,0.369545815905213,-0.68315414401781,0.434223266046151,-0.47635978142003,-0.384057254696978,0.27300326547501,-0.0222019957330237,0.349687035250376,-0.0699743597603593,-0.0812565014522202,0.128200178930258,0.0198888771611638,-0.139741235596286,0.211022824473295,-0.895452326161943,-0.857609945007514,-0.320027468225966,0.0530986775167936,0.34646053798001,-0.375067987661233,-0.637210081452817,-0.363036100902374,-0.6237914898821,-0.761156738191006,0.306639644566062,0.409253341106819,-0.532530458456325,-0.268998161291552,-0.872590113596231,-0.893412553019603,0.753874651897157,0.675032316370743,0.617963435529088,0.668662297053674,-0.100094724176433,-0.715288634254798,-0.653462494890777,-0.193798242519425,-0.579543154529081,-0.102057951104259,0.221557296816097,-0.532204710455926,0.103657209987188,0.368548749374292,0.141240282618671,0.516947956969574,0.544989504473293,-0.729483318880664,0.499964017193448,-0.356734923088094,-0.348696333108847,0.954400694584732,-0.253705055454615,0.638949812165842,0.0381639887339875,-0.183065481998542,-0.104842966742644,-0.0306593292133361,0.636694005451179,0.127211037172221,0.608763437601948,-0.294665364593228,0.72738924132159,0.36912183296545,0.687450637336711,0.742952695377439,-0.0473781392029512,0.106154925180199,-0.180099716573499,0.0369624118432936,0.335153673223429,-0.96546526379934,0.497060415502617,-0.565244557722327,-0.405884658434325,-0.603244355137015,0.896525134069023,-0.567389976989604,-0.142666137991128,-0.101124738236027,-0.725895153669459,0.881687746236791],"y":[0.556459699447781,0.600660198173119,0.289523337506956,0.450086045158668,0.457272039257129,-0.599282731869182,-0.808967510112402,-0.0815901664338633,-0.764652772186794,-0.804959916835551,0.545064342897561,0.784900770858394,-0.301900417608682,0.979396426977163,-0.328847165252982,-0.692279380976566,0.561582755031031,0.189626605716798,0.252317365464857,0.11927847705584,0.120878457309028,-0.751968149330589,0.547904341104399,-0.461691139897951,-0.0140911780264034,-0.292963119019759,0.758855566366987,0.759312548468605,0.46929663023455,0.196750810515401,-0.249763189739022,-0.636698116365921,-0.578124003406038,-0.715825713383847,0.436793927549777,0.77713334975935,-0.385731812819187,-0.374827467668739,0.380248412143366,-0.468662092277137,-0.298185341598699,-0.887251055512913,0.380910497823397,0.559775399712432,0.871018584424269,-0.0287293488038947,-0.20517529714688,0.917890170404992,-0.0207993463675306,0.916055378236,0.715039788254522,-0.924237753362398,-0.589813145566985,-0.295012820074322,0.317694641663893,-0.758406668432669,-0.472985206383435,0.308323312945984,-0.577895772818454,-0.133442406845134,-0.141010743394068,1,0.418280586367594,-0.164583409651484,-0.192284180443432,0.821389914353186,-0.479313164660524,-0.865362441163479,-0.110047728359642,-0.00053743501859238,0.670053300984656,0.52890480359314,-0.257079120364608,-0.246642008650209,0.15338849250741,-0.860646214795596,0.273676963038397,-0.686073722538279,-0.481508618840298,0.202278449156742,-0.574248416175167,-0.743345803012674,0.00697676338826159,-0.0138284277710071,-0.348882137456132,-0.416995926858454,-0.959715996703578,0.360259513441674,0.46505963728643,0.535748226772754,0.385591742603149,-0.112866896537404,-0.665373441506688,0.701423236081925,-0.739393778632935,-0.652707927876653,0.515337226703936,0.154246958696003,0.734472257806582,-0.583906586204897,-0.259018529965491,-0.216103734136511,0.953540556579016,-0.375042836966145,-0.275060774885668,-0.468980229015095,-0.45748055338897,0.251691756821232,0.126252102358037,0.0471327113446403,0.17353349111848,0.303643731906972,0.644180784960229,0.563065715405007,0.61023806786434,0.752606090107437,-0.420565181326938,-0.00962284834979299,-0.0762895150388958,-0.450974231580469,-0.174715657402289,0.857207551366833,0.434186340062207,0.487074426709782,0.354374807317922,0.197864716332967,-0.603704446556013,-0.739225094158737,-0.677671334993306,0.402768307882752,0.168509391552256,-0.555802765036555,0.0255278671503238,0.623384944768183,0.987803694168442,0.761116867474175,-0.854199767223196,-0.0111499179780563,0.0335251458307837,0.0572058670842446,-0.505991897854735,-0.247450910030656,0.311895463539674,0.881122148408108,-0.257793609558834,0.020258321155636,-0.285948000383853,-0.810207174887642,0.761191847441351,0.876149203647191,-0.497292191888789,-0.640080050957684,-0.692662440356852,0.601376351126634,0.990638354223343,-0.0706758859050077,-0.126991429529579,-0.149330453063374,0.831127520734218,-0.0617183099507721,-0.253950957060888,0.755744420496817,-0.965920792606775,0.687243238821953,-0.893751188596677,0.132433367150737,0.254637058437551,0.60858607522655,0.140962398762114,0.171794383361043,-0.387784437918306,-0.459026420951199,-0.175180067622798,-0.878904461543756,-1,-0.421496834379388,0.186471855961472],"label":["Adair Salmon ОАО Family","Adriatic Tuna Seabass BV Transit","Aqua Azul GmbH & Co. KG Freight ","Aqua Azul LC International","Arena Azul S.A. de C.V.","Arena del Sol Pic","Arunachal Pradesh s Kga","Asiotr GmbH & Co. KG","Barents Sea Cod CJSC Export","Black Sea Carp Ltd","Blue Horizon Family &","Brisa del Este ОАО","Caracola del Sol Incorporated","Chuan gou  N.V. Delivery","Coastal Cruisers Pic Shipping","Coral del Mar Logistics","Costa de Oro CJSC","Daniel Ferry N.V. Transit","Danish Plaice BV Investment","Danish Shrimp Kga Solutions","Diao er  Limited Liability Company","Dry Creek Pic Marine biology","Dutch Eel AB Holdings","Eirene AB Marine sanctuary","Estrella de la Costa SRL","Fisherman's Bounty AG Solutions","Fresh Limited Liability Company","Goa   Seaside Sp Overseas","Great Ruaha River  Brothers","Greek Octopus SRL Logistics","Gujarat   Tide NV Solutions","Ianira Starfish Sagl Import","Icelandic Cod Pier ОАО Transport","Isla del Este N.V.","Isla del Mar Ltd. Liability Co Enterprises","James Leska Ges.m.b.H. Marine","Jharkhand  Ltd. Liability Co Worldwide","Kafue River  Express Mussel","Kilimajaro Slopes   Incorporated and Son's","Lake Motoso  Sagl Brothers","Madhya Pradesh  Market LLC","Makumba Ltd. Liability Co","Manipur  Market Corporation Cargo","Mar de la Vida Krill","Mar de la Vida S.p.A.","Mar y Luna Sagl","Marine Masterminds Dry dock","Marine Masterminds SE Saltwater","Nautical Navigators Limited Liability Company Holdings","Neptune's Harvest A/S Hijiki","Neptune's Realm NV Navigation","Nile   S.A. de C.V.","Náutica del Norte Kga Holdings","Náutica del Sol Brothers","Oceanic Oracle GmbH & Co. KG","OceanicOrigin Foods Co Consulting","Okavango Delta  Cargo ship","Ola de la Costa Ges.m.b.H.","Orange River   GmbH & Co. KG Shipping","Paradera S.A. de C.V.","Pez Dorado Inc Freight ","Pez Dorado Plc Seaport","Playa de Arena OJSC Express","Playa del Mar Corporation","Playa del Tesoro BV","Playa del Tesoro OJSC","Saltwater Sanctuary ОАО Merchants","Saltwater Sisters Inc Seafaring","Saltwater Symphony S.A. de C.V.","Sea Breezes S.A. de C.V. Freight ","Sea Seekers Marine sanctuary","Selous Game Reserve  A/S","Shou gan  Oyj Overseas","Spanish Shrimp A/S Marine","The Salted Pearl AG Marine conservation","The Salty Pearl Kga","Tristen Jetty Company Solutions","Turkish Sword NV Ocean","Uttar Pradesh s CJSC","Wave Watchers Ltd. Liability Co","Yenisei  Eel GmbH & Co. KG Services","bǐ mù yú Sagl Distribution","lú yú Ltd. Corporation","nián yú Ltd. Corporation","suō yú Incorporated Brothers","hǎi dǎn Corporation Wharf","lǐyú GmbH & Co. KG Logistics","Punjab Sea  CJSC Estuary","Arunachal Pradesh s Brine","Mandalore S.A. de C.V. Logistics","Océano de Coral Corporation Express","Saltwater Supreme ОАО Forwading","Panope Limited Liability Company","Brisa del Este BV","Coral Cove BV Delivery","Sea Breezes GmbH & Co. KG Shark","Madagascar Coast  AG Freight ","Mar del Este CJSC","Pelagia Ltd. Corporation Family","Niger River   NV Delivery","Caracola del Sol Services","-2018","Black Sea Tuna Sagl","Brisa del Mar LC","Dubingiai Ltd. Liability Co","Marine Mates Cruise ship","ReefRider Foods Ltd. Corporation Family","AquaDelight N.V. Coral Reef","Pao gan SE Seal","-2926","Sailors and Surfers Incorporated Enterprises","Estrella del Sol Incorporated Aqua","Pao gan LC Freight ","Portuguese Tuna Incorporated Marine","The Sea Turtle GmbH & Co. KG","páng xiè S.A. de C.V. Line","Estrella del Mar Tilapia Oyj Marine","Uttarakhand  Market Limited Liability Company Nautical","Volga River LLC Enterprises","Coastal Castaway Coast Corporation Worldwide","Costa de la Felicidad Shipping","Madhya Pradesh  Market - Oyj Carriers","Selkie Ltd. Liability Co","Orange River   Incorporated Shipping","-2772","-8000","Haryana s Sagl Transport","Kong zhong diao yu  Express Charter Boat ","Oceanic Opportunities Incorporated Line","-2907","-54","Ancla Azul Transportation Seafaring","Holdings Ltd. Liability Co","Playa de la Felicidad SE","SeaBass &  SE Tanker","SilverStream CJSC Marine conservation","Orange River Mouth   LLC","Arena del Mar Marine Marine biology","Niger Bend   Limited Liability Company Marine ecology","Tamil Nadu   Corporation Compass","Selous Game Reserve  S.A. de C.V.","Náutica del Sol Corporation","Sea Breeze Corporation Marine sanctuary","-1121","Fisherman's Best Marine conservation","Mar del Placer Manatee","Playa de la Luna Incorporated","Lake Tanganyika  Inc Jetty","Isla del Mar NV Forwading","Black Sea Tuna Snapper","Cape of Good Hope   S.p.A.","Eukrante Marine biology A/S Express","French Sole Limited Liability Company Logistics","Arena Azul SE Nautical","Mar de la Vida LC","-2821","-2917","-703","Arunachal Pradesh s Ltd. Corporation Coast","Konkan Coast  SRL Logistics","lú yú GmbH & Co. KG","Fresh Wharf SRL Consulting","-2105","-267","Togo  S.A. de C.V.","Kong zhong diao yu  Ges.m.b.H.","Estrella del Mar N.V. United","-37","SeaTree Ltd. Liability Co Holdings","Turkish Salmon A/S Marine","Rybachit Sagl and Son's","Harbah Ltd. Liability Co Consultants","-3802","Nile Crocodile  Sailboat Sp Line","West Bengal  Company Nori","Saltwater Supreme Pelican Ltd Enterprises","Belgian Shrimps Corp Marine life"]},"edges":{"from":["Aqua Azul GmbH & Co. KG Freight ","Aqua Azul LC International","Arena Azul S.A. de C.V.","Arena Azul S.A. de C.V.","Barents Sea Cod CJSC Export","Black Sea Carp Ltd","Blue Horizon Family &","Brisa del Este ОАО","Coastal Cruisers Pic Shipping","Coastal Cruisers Pic Shipping","Coastal Cruisers Pic Shipping","Coastal Cruisers Pic Shipping","Coastal Cruisers Pic Shipping","Coastal Cruisers Pic Shipping","Daniel Ferry N.V. Transit","Danish Plaice BV Investment","Danish Shrimp Kga Solutions","Danish Shrimp Kga Solutions","Dry Creek Pic Marine biology","Dry Creek Pic Marine biology","Dutch Eel AB Holdings","Eirene AB Marine sanctuary","Estrella de la Costa SRL","Estrella de la Costa SRL","Fisherman's Bounty AG Solutions","Fisherman's Bounty AG Solutions","Greek Octopus SRL Logistics","Ianira Starfish Sagl Import","Ianira Starfish Sagl Import","Ianira Starfish Sagl Import","Ianira Starfish Sagl Import","Ianira Starfish Sagl Import","Ianira Starfish Sagl Import","Icelandic Cod Pier ОАО Transport","Icelandic Cod Pier ОАО Transport","James Leska Ges.m.b.H. Marine","Jharkhand  Ltd. Liability Co Worldwide","Madhya Pradesh  Market LLC","Madhya Pradesh  Market LLC","Madhya Pradesh  Market LLC","Makumba Ltd. Liability Co","Manipur  Market Corporation Cargo","Mar y Luna Sagl","Marine Masterminds Dry dock","Marine Masterminds Dry dock","Neptune's Realm NV Navigation","Náutica del Norte Kga Holdings","Náutica del Norte Kga Holdings","Náutica del Norte Kga Holdings","Náutica del Norte Kga Holdings","OceanicOrigin Foods Co Consulting","OceanicOrigin Foods Co Consulting","OceanicOrigin Foods Co Consulting","Okavango Delta  Cargo ship","Okavango Delta  Cargo ship","Okavango Delta  Cargo ship","Orange River   GmbH & Co. KG Shipping","Orange River   GmbH & Co. KG Shipping","Orange River   GmbH & Co. KG Shipping","Orange River   GmbH & Co. KG Shipping","Pez Dorado Inc Freight ","Pez Dorado Plc Seaport","Playa del Mar Corporation","Playa del Tesoro BV","Playa del Tesoro BV","Playa del Tesoro BV","Playa del Tesoro BV","Playa del Tesoro BV","Playa del Tesoro BV","Playa del Tesoro BV","Playa del Tesoro OJSC","Saltwater Sisters Inc Seafaring","Saltwater Sisters Inc Seafaring","Saltwater Sisters Inc Seafaring","Saltwater Symphony S.A. de C.V.","Sea Breezes S.A. de C.V. Freight ","Sea Breezes S.A. de C.V. Freight ","Sea Breezes S.A. de C.V. Freight ","Sea Breezes S.A. de C.V. Freight ","Sea Breezes S.A. de C.V. Freight ","Selous Game Reserve  A/S","Spanish Shrimp A/S Marine","The Salted Pearl AG Marine conservation","The Salted Pearl AG Marine conservation","The Salty Pearl Kga","Tristen Jetty Company Solutions","Uttar Pradesh s CJSC","Uttar Pradesh s CJSC","Uttar Pradesh s CJSC","Uttar Pradesh s CJSC","Uttar Pradesh s CJSC","Uttar Pradesh s CJSC","Wave Watchers Ltd. Liability Co","lú yú Ltd. Corporation","nián yú Ltd. Corporation","nián yú Ltd. Corporation","nián yú Ltd. Corporation","nián yú Ltd. Corporation","nián yú Ltd. Corporation","suō yú Incorporated Brothers","suō yú Incorporated Brothers","suō yú Incorporated Brothers","suō yú Incorporated Brothers"],"to":["Punjab Sea  CJSC Estuary","Arunachal Pradesh s Brine","Mandalore S.A. de C.V. Logistics","Océano de Coral Corporation Express","Coral Cove BV Delivery","Panope Limited Liability Company","Madagascar Coast  AG Freight ","Pelagia Ltd. Corporation Family","-2018","Brisa del Mar LC","Caracola del Sol Services","Dubingiai Ltd. Liability Co","Marine Mates Cruise ship","ReefRider Foods Ltd. Corporation Family","AquaDelight N.V. Coral Reef","Pao gan SE Seal","-2926","Sailors and Surfers Incorporated Enterprises","Panope Limited Liability Company","Sea Breezes GmbH & Co. KG Shark","The Sea Turtle GmbH & Co. KG","hǎi dǎn Corporation Wharf","Uttarakhand  Market Limited Liability Company Nautical","Volga River LLC Enterprises","Coastal Castaway Coast Corporation Worldwide","Costa de la Felicidad Shipping","Pao gan SE Seal","Coral Cove BV Delivery","Haryana s Sagl Transport","Kong zhong diao yu  Express Charter Boat ","Oceanic Opportunities Incorporated Line","Panope Limited Liability Company","hǎi dǎn Corporation Wharf","Coral Cove BV Delivery","hǎi dǎn Corporation Wharf","SilverStream CJSC Marine conservation","hǎi dǎn Corporation Wharf","Caracola del Sol Services","Náutica del Sol Corporation","hǎi dǎn Corporation Wharf","Coral Cove BV Delivery","Sea Breeze Corporation Marine sanctuary","Saltwater Supreme ОАО Forwading","Playa de la Luna Incorporated","Saltwater Supreme ОАО Forwading","Isla del Mar NV Forwading","Coastal Castaway Coast Corporation Worldwide","Coral Cove BV Delivery","Marine Mates Cruise ship","Panope Limited Liability Company","Coral Cove BV Delivery","Panope Limited Liability Company","Sea Breezes GmbH & Co. KG Shark","Brisa del Mar LC","Cape of Good Hope   S.p.A.","Marine Mates Cruise ship","Eukrante Marine biology A/S Express","French Sole Limited Liability Company Logistics","Marine Mates Cruise ship","ReefRider Foods Ltd. Corporation Family","Volga River LLC Enterprises","Mar de la Vida LC","Caracola del Sol Services","-2821","-703","Costa de la Felicidad Shipping","Konkan Coast  SRL Logistics","Saltwater Supreme ОАО Forwading","hǎi dǎn Corporation Wharf","lú yú GmbH & Co. KG","Fresh Wharf SRL Consulting","-2105","Coral Cove BV Delivery","Togo  S.A. de C.V.","Saltwater Supreme ОАО Forwading","Caracola del Sol Services","Kong zhong diao yu  Ges.m.b.H.","Mar del Este CJSC","Niger Bend   Limited Liability Company Marine ecology","Pao gan SE Seal","-37","Caracola del Sol Services","SeaTree Ltd. Liability Co Holdings","Turkish Salmon A/S Marine","Coral Cove BV Delivery","Mar del Este CJSC","Caracola del Sol Services","Coastal Castaway Coast Corporation Worldwide","Panope Limited Liability Company","Sea Breezes GmbH & Co. KG Shark","Selous Game Reserve  S.A. de C.V.","hǎi dǎn Corporation Wharf","Mar del Este CJSC","Saltwater Supreme ОАО Forwading","Arena del Mar Marine Marine biology","Costa de la Felicidad Shipping","Niger Bend   Limited Liability Company Marine ecology","Pao gan SE Seal","Tamil Nadu   Corporation Compass","Caracola del Sol Services","Costa de la Felicidad Shipping","Marine Mates Cruise ship","hǎi dǎn Corporation Wharf"],"weights":[2,5,4,3,3,3,4,3,2,3,6,3,5,2,4,2,2,7,5,2,2,3,2,4,2,2,2,7,5,12,5,4,6,2,4,3,2,2,2,2,2,6,3,4,8,2,2,2,2,3,2,3,3,2,2,5,2,2,3,2,2,2,2,5,3,7,6,2,2,2,7,2,2,2,2,7,2,2,3,3,5,2,2,3,4,3,2,2,7,11,3,3,8,2,4,3,5,4,2,2,6,2,3]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":false},"physics":{"stabilization":false},"layout":{"randomSeed":123}},"groups":null,"width":null,"height":null,"idselection":{"enabled":true,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"square"},"highlight":{"enabled":true,"hoverNearest":false,"degree":1,"algorithm":"all","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":true,"position":"left","ncol":1,"stepX":100,"stepY":100,"zoom":true}},"evals":[],"jsHooks":[]}</script>
+</div>
 </div>
 </section>
 <section id="visualizing" class="level3">
@@ -446,9 +634,40 @@ Note
 <div class="cell">
 
 </div>
-
-
 </section>
+</section>
+</section>
+<section id="evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided" class="level1">
+<h1>5. Evaluate the sets of predicted knowledge graph links FishEye has provided</h1>
+<section id="read-provided-json-files" class="level2">
+<h2 class="anchored" data-anchor-id="read-provided-json-files">5.1 Read provided json files:</h2>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"data/bundles/carp.json"</span>, </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/catfish.json"</span>, </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/chub_mackerel.json"</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/cod2.json"</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/herring.json"</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/lichen.json"</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/mackerel.json"</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/pollock.json"</span>,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/salmon_wgl.json"</span>,</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/salmon.json"</span>,</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/shark.json"</span>,</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>           <span class="st">"data/bundles/tuna.json"</span>)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>fisheye <span class="ot">&lt;-</span> <span class="fu">do.call</span>(<span class="st">"rbind"</span>, <span class="fu">lapply</span>(files, fromJSON))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+
+
 </section>
 </section>
 

@@ -33,15 +33,14 @@ Second, FishEye has been using several tools, including artificial intelligence,
 
 4.  Identify companies that fit a pattern of illegal fishing. Use visualizations to support your conclusions and your confidence in them. Limit your response to 300 words and 4 images.
 
-5.  Reflection: What was the most difficult aspect of working with this knowledge graph? Did you have the tools and resources you needed to complete the challenge? What additional resources would have helped you? Limit your response to 300 words
-
 ## 2. Load packages and data:
 
-The data should be processed by using appropriate **tidyverse** family of packages and the statistical graphics must be prepared using ggplot2 and its extensions.
+```{r}
+pacman::p_load(igraph, tidygraph, ggraph, visNetwork, lubridate, 
+               tidyverse, graphlayouts, jsonlite)
+```
 
 ```{r}
-pacman::p_load(ggstatsplot, tidyverse, ggplot2, plotly, ggmosaic, ggridges, gganimate,ggdist,jsonlite)
-
 mc2 <- jsonlite::fromJSON("data/mc2_challenge_graph.json")
 ```
 
@@ -58,74 +57,192 @@ mc2_nodes <- as_tibble(mc2$nodes) %>%
 ```{r}
 #view(mc2[["links"]])
 mc2_edges <- as_tibble(mc2$links) %>%
-  select(source, target, weightkg, hscode, arrivaldate, volumeteu, valueofgoods_omu, valueofgoodsusd)
+  mutate(arrivaldate = ymd(arrivaldate)) %>%
+  mutate(year = year(arrivaldate)) %>%
+  select(source, target, weightkg, hscode, arrivaldate, year, volumeteu, valueofgoods_omu, valueofgoodsusd) %>%
+  distinct()
+```
+
+```{r}
+glimpse(mc2_edges)
 ```
 
 ### 3.2 Data wranggling
 
 ### 3.2.1 Check and deal with NA:
 
--   It's confirmed from the summary table that "wages" and "rent adjustment" got only positive numbers and other categories are negative numbers.
+-   Create a numeric ID for nodes and change original id column name to "label".
 
-```{r}
-
+```{=html}
+<!-- -->
 ```
-
-::: callout-warning
-Here is warning message.
-:::
-
-### 3.2.2 Aggregate by links?:
-
--   Distribution of resources:
-
-    ```{r}
-
-    ```
-
--   Distribution of taragets:
-
-    ```{r}
-
-    ```
-
-### 3.3 Combine information into one table
-
--   .
+-   Deal with NA and check data type in edges.
 
 ```{r}
-
+#mc2_link <- select(mc2_edges %>% 
+#                     drop_na(valueofgoodsusd) %>%
+#                     mutate(arrivaldate = ymd(arrivaldate)) %>%
+#                     mutate(Weekday = wday(arrivaldate,
+#                        label = TRUE))
+#                   , -valueofgoods_omu)
+#glimpse(mc2_link)
 ```
 
 ::: callout-note
-Here is a note
+### Notes
+
+Here I dropped any NA in nodes and any NA in 'valueofgoodsusd' column of edges. I also dropped the 'valueofgood_omu' column since there were too many NA rows.
+
+And the 'arrivaldate' column of edges is treated as 'chr' datatype, would need to be changed to 'date' type.
 :::
 
--   Then summarize into a new table named "fi_ave" in which transpose the monthly average Income/Expenses categories into column names;
+-   Match nodes' numeric id to source and target in edges and change original column names to "source_label" & "target_label.
 
 ```{r}
-
+#colnames(mc2_link)[1] <- "source_label"
+#colnames(mc2_link)[2] <- "target_label"
+#mc2_link$source <- with(mc2_nodes, id[match(mc2_link$source_label, label)])
+#mc2_link$target <- with(mc2_nodes, id[match(mc2_link$target_label, label)])
+#glimpse(mc2_link)
 ```
 
--   Combine "fi_ave" with "parti" into a new table named "joy".
+### 3.2.3 Wrangling attributes:
 
-```{r}
+-   Find hscode with most edges:
 
+    ```{r}
+    hscode_count <-  mc2_edges %>%
+      select(hscode) %>%
+      group_by(hscode) %>%
+      summarise(count = n()) %>%
+      distinct() %>%
+      arrange(desc(count))
+
+    hscode_select <- pull(select(hscode_count[hscode_count$count > 50000, ], hscode),hscode)
+    hscode_select
+    ```
+
+```{=html}
+<!-- -->
 ```
+-   Distribution of edges by years:
+
+    ```{r}
+    #| fig-width: 4
+    #| fig-height: 4
+
+    ggplot(data = mc2_edges, aes(x=year)) +
+      geom_histogram(bins = 7, binwidth = 0.5) +
+      xlab("Year")
+    ```
 
 # 4. Analysis & Visualization
 
 ## 4.1 Visualizing original links
 
-### 4.1.1 ?
-
-From the chart below we can find that different interest group attract people with quite different education level.
+### 4.1.1 Build a network graph of those selected hscodes:
 
 ```{r}
-
+mc2_edges_aggregated <- mc2_edges %>%
+  filter(hscode == hscode_select) %>%
+  group_by(source, target, hscode, year) %>%
+    summarise(weights = n()) %>%
+  filter(source!=target) %>%
+  filter(weights > 20) %>%
+  ungroup()
 ```
 
-### 4.1.2 ?
+```{r}
+id1 <- mc2_edges_aggregated %>%
+  select(source,hscode) %>%
+  rename(id = source)
+id2 <- mc2_edges_aggregated %>%
+  select(target,hscode) %>%
+  rename(id = target)
+mc2_nodes_extracted <- rbind(id1, id2) %>%
+  distinct()
+```
+
+```{r}
+mc2_graph <- tbl_graph(nodes = mc2_nodes_extracted,
+                       edges = mc2_edges_aggregated,
+                       directed = TRUE)
+```
+
+```{r}
+#| fig-width: 6
+#| fig-height: 6
+
+g <- ggraph(mc2_graph, 
+            layout = "nicely") +
+  geom_edge_link(aes(width=weights), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 2)) +
+  geom_node_point(aes(colour = hscode), 
+                  size = 1)
+
+g + theme_graph()
+```
+
+Build a facet graph by years to see the change of network in different years:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 10
+
+set_graph_style() 
+
+g <- ggraph(mc2_graph, 
+            layout = "nicely") + 
+  geom_edge_link(aes(width=weights), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 5)) +
+  geom_node_point(aes(color = hscode), size = 0.5) +
+  theme(legend.position = 'bottom')
+  
+g + facet_edges(~year)+
+  th_foreground(foreground = "grey80",  
+                border = TRUE)  
+```
+
+Build a facet_nodes graph by hscode to see the difference:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 10
+
+set_graph_style()
+
+g <- ggraph(mc2_graph, 
+            layout = "nicely") + 
+  geom_edge_link(aes(width=weights), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 5)) +
+  geom_node_point(aes(), 
+                  size = 0.5)
+  
+g + facet_nodes(~hscode)+
+  th_foreground(foreground = "grey80",  
+                border = TRUE) +
+  theme(legend.position = 'bottom')
+```
+
+### 4.1.2 Find communities
+
+```{r}
+#| fig-width: 6
+#| fig-height: 6
+
+g <- mc2_graph %>%
+  mutate(community = as.factor(group_edge_betweenness(weights = weights, directed = TRUE))) %>%
+  ggraph(layout = "fr") + 
+  geom_edge_link(aes(width=weights), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 5)) +
+  geom_node_point(aes(colour = community))  
+
+g + theme_graph()
+```
 
 ```{r}
 
@@ -134,17 +251,66 @@ From the chart below we can find that different interest group attract people wi
 
 ## 4.2 Finding pattern
 
-### 4.2.1 new patterns?
+### 4.2.1 new patterns
 
-Citizens' monthly income apparently goes up with their educational level, indicating local labor market do care about employees' education background.
+Prepare data for interactive network graph.
 
 ```{r}
+mc2_edges_aggregated$from <- with(mc2_nodes, id[match(mc2_edges_aggregated$source, id)])
+mc2_edges_aggregated$to <- with(mc2_nodes, id[match(mc2_edges_aggregated$target, id)])
 
+mc2_edges_aggregated2 <- mc2_edges_aggregated %>%
+  group_by(from, to) %>%
+  summarise(weights = n()) %>%
+  filter(from!=to) %>%
+  filter(weights > 1) %>%
+  ungroup
+```
+
+```{r}
+visNetwork(mc2_nodes_extracted %>%
+             select(id)%>%
+             distinct(),
+           mc2_edges_aggregated2) %>%
+  visIgraphLayout(layout = "layout_with_fr") %>%
+  visOptions(highlightNearest = TRUE,
+             nodesIdSelection = TRUE) %>%
+  visLegend() %>%
+  visLayout(randomSeed = 123)
 ```
 
 ### 4.2.2 Visualizing
 
 Monthly income distributing quite evenly over different household size and joviality level.
+
+```{r}
+
+```
+
+# 5. Evaluate the sets of predicted knowledge graph links FishEye has provided
+
+## 5.1 Read provided json files:
+
+```{r}
+files <- c("data/bundles/carp.json", 
+           "data/bundles/catfish.json", 
+           "data/bundles/chub_mackerel.json",
+           "data/bundles/cod2.json",
+           "data/bundles/herring.json",
+           "data/bundles/lichen.json",
+           "data/bundles/mackerel.json",
+           "data/bundles/pollock.json",
+           "data/bundles/salmon_wgl.json",
+           "data/bundles/salmon.json",
+           "data/bundles/shark.json",
+           "data/bundles/tuna.json")
+
+fisheye <- do.call("rbind", lapply(files, fromJSON))
+```
+
+```{r}
+
+```
 
 ```{r}
 

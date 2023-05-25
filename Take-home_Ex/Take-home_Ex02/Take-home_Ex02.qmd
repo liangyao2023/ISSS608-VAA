@@ -13,7 +13,7 @@ format:
     code-summary: "Show the code"
 ---
 
-## 1. Task and Questions:
+# 1. Task and Questions:
 
 ### Objectives:
 
@@ -33,20 +33,20 @@ Second, FishEye has been using several tools, including artificial intelligence,
 
 4.  Identify companies that fit a pattern of illegal fishing. Use visualizations to support your conclusions and your confidence in them. Limit your response to 300 words and 4 images.
 
-## 2. Load packages and data:
+# 2. Load packages and data:
 
 ```{r}
 pacman::p_load(igraph, tidygraph, ggraph, visNetwork, lubridate, 
-               tidyverse, graphlayouts, jsonlite)
+               tidyverse, graphlayouts, jsonlite,tidyr,heatmaply)
 ```
 
 ```{r}
 mc2 <- jsonlite::fromJSON("data/mc2_challenge_graph.json")
 ```
 
-## 3. Data checking/cleaning:
+# 3. Data checking/cleaning:
 
-### 3.1 Find the nodes and edges:
+## 3.1 Find the nodes and edges:
 
 ```{r}
 #view(mc2[["nodes"]])
@@ -67,90 +67,97 @@ mc2_edges <- as_tibble(mc2$links) %>%
 glimpse(mc2_edges)
 ```
 
-### 3.2 Data wranggling
-
-### 3.2.1 Check and deal with NA:
-
--   Create a numeric ID for nodes and change original id column name to "label".
-
-```{=html}
-<!-- -->
-```
--   Deal with NA and check data type in edges.
-
-```{r}
-#mc2_link <- select(mc2_edges %>% 
-#                     drop_na(valueofgoodsusd) %>%
-#                     mutate(arrivaldate = ymd(arrivaldate)) %>%
-#                     mutate(Weekday = wday(arrivaldate,
-#                        label = TRUE))
-#                   , -valueofgoods_omu)
-#glimpse(mc2_link)
-```
-
 ::: callout-note
-### Notes
+### Note:
 
-Here I dropped any NA in nodes and any NA in 'valueofgoodsusd' column of edges. I also dropped the 'valueofgood_omu' column since there were too many NA rows.
-
-And the 'arrivaldate' column of edges is treated as 'chr' datatype, would need to be changed to 'date' type.
+Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need to be changed to 'date' type. And a new column added to indicate years.
 :::
 
--   Match nodes' numeric id to source and target in edges and change original column names to "source_label" & "target_label.
+## 3.2 Wrangling attributes:
 
-```{r}
-#colnames(mc2_link)[1] <- "source_label"
-#colnames(mc2_link)[2] <- "target_label"
-#mc2_link$source <- with(mc2_nodes, id[match(mc2_link$source_label, label)])
-#mc2_link$target <- with(mc2_nodes, id[match(mc2_link$target_label, label)])
-#glimpse(mc2_link)
-```
-
-### 3.2.3 Wrangling attributes:
-
--   Find hscode with most edges:
+-   Find hscode with most edges and hscode with most weightkg of fishing:
 
     ```{r}
     hscode_count <-  mc2_edges %>%
-      select(hscode) %>%
+      select(hscode,weightkg) %>%
       group_by(hscode) %>%
-      summarise(count = n()) %>%
+      summarise(weightkg = sum(weightkg), count=n()) %>%
       distinct() %>%
-      arrange(desc(count))
+      arrange(desc(weightkg))
 
-    hscode_select <- pull(select(hscode_count[hscode_count$count > 50000, ], hscode),hscode)
-    hscode_select
+    hscode_maj <- pull(select(hscode_count[hscode_count$count > 50000, ], hscode),hscode)
+    hscode_maj
+
+    hscode_heavy <- pull(select(hscode_count[hscode_count$weightkg > 3000000000, ],hscode),hscode)
+    hscode_heavy
     ```
 
-```{=html}
-<!-- -->
-```
 -   Distribution of edges by years:
 
     ```{r}
-    #| fig-width: 4
-    #| fig-height: 4
+    #| fig-width: 6
+    #| fig-height: 3
 
     ggplot(data = mc2_edges, aes(x=year)) +
       geom_histogram(bins = 7, binwidth = 0.5) +
+      ggtitle("Totaol edges weights by years") +
       xlab("Year")
     ```
 
-# 4. Analysis & Visualization
+# 4. Pattern Analysis & Visualization
 
-## 4.1 Visualizing original links
+## 4.1 Visualizing temporal patterns for individual entities by heatmap
 
-### 4.1.1 Build a network graph of those selected hscodes:
+### 4.1.1 Transforming the data frame into a matrix
+
+Find edges filtering by those majority hscodes.
 
 ```{r}
 mc2_edges_aggregated <- mc2_edges %>%
-  filter(hscode == hscode_select) %>%
+  filter(hscode == hscode_heavy) %>%
   group_by(source, target, hscode, year) %>%
-    summarise(weights = n()) %>%
+    summarise(weights = sum(weightkg)) %>%
   filter(source!=target) %>%
-  filter(weights > 20) %>%
+  filter(weights > 1000000) %>%
   ungroup()
 ```
+
+```{r}
+mc2_selected_companies <- mc2_edges_aggregated %>%
+  select(source,year,weights) %>%
+  group_by(source, year) %>%
+  summarize(weights = sum(weights)) %>%
+  pivot_wider(names_from = year, values_from = weights, values_fill = 0) 
+
+row.names(mc2_selected_companies) <- mc2_selected_companies$source
+companies_matrix <- data.matrix(mc2_selected_companies)
+```
+
+### 4.1.2 Building heatmap
+
+```{r}
+#| fig-width: 6
+#| fig-height: 8
+
+heatmaply(normalize(companies_matrix[, -c(1, 2, 4, 5)]),
+          Colv=NA,
+          seriate = "none",
+          colors = Blues,
+          k_row = 5,
+          margins = c(NA,200,60,NA),
+          fontsize_row = 6,
+          fontsize_col = 6,
+          main="Companies' change of fishing weights by years",
+          xlab = "Years",
+          ylab = "Companies"
+          )
+```
+
+## 4.2 Visualizing links between companies
+
+### 4.2.1 Build a network graph of those selected hscodes with most fishing weight:
+
+-   Prepare the data
 
 ```{r}
 id1 <- mc2_edges_aggregated %>%
@@ -169,13 +176,15 @@ mc2_graph <- tbl_graph(nodes = mc2_nodes_extracted,
                        directed = TRUE)
 ```
 
+-   Basic network graph to see the whole picture.
+
 ```{r}
-#| fig-width: 6
-#| fig-height: 6
+#| fig-width: 7
+#| fig-height: 5
 
 g <- ggraph(mc2_graph, 
             layout = "nicely") +
-  geom_edge_link(aes(width=weights), 
+  geom_edge_link(aes(linewidth=weights), 
                  alpha=0.2) +
   scale_edge_width(range = c(0.1, 2)) +
   geom_node_point(aes(colour = hscode), 
@@ -184,32 +193,53 @@ g <- ggraph(mc2_graph,
 g + theme_graph()
 ```
 
-Build a facet graph by years to see the change of network in different years:
+-   Build a facet graph by years to see the change of network in different years:
 
 ```{r}
 #| fig-width: 8
-#| fig-height: 10
+#| fig-height: 8
 
 set_graph_style() 
 
 g <- ggraph(mc2_graph, 
             layout = "nicely") + 
-  geom_edge_link(aes(width=weights), 
+  geom_edge_link(aes(linewidth=weights), 
                  alpha=0.2) +
   scale_edge_width(range = c(0.1, 5)) +
   geom_node_point(aes(color = hscode), size = 0.5) +
   theme(legend.position = 'bottom')
   
 g + facet_edges(~year)+
-  th_foreground(foreground = "grey80",  
+  th_foreground(foreground = "grey90",  
                 border = TRUE)  
 ```
 
-Build a facet_nodes graph by hscode to see the difference:
+-   Build a facet network graph by hscode:
 
 ```{r}
 #| fig-width: 8
-#| fig-height: 10
+#| fig-height: 8
+
+set_graph_style() 
+
+g <- ggraph(mc2_graph, 
+            layout = "nicely") + 
+  geom_edge_link(aes(linewidth=weights), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 5)) +
+  geom_node_point(aes(color = hscode), size = 0.5) +
+  theme(legend.position = 'bottom')
+  
+g + facet_edges(~hscode)+
+  th_foreground(foreground = "grey90",  
+                border = TRUE)  
+```
+
+-   Build a facet_nodes graph by hscode to see the difference:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
 
 set_graph_style()
 
@@ -222,15 +252,15 @@ g <- ggraph(mc2_graph,
                   size = 0.5)
   
 g + facet_nodes(~hscode)+
-  th_foreground(foreground = "grey80",  
+  th_foreground(foreground = "grey90",  
                 border = TRUE) +
   theme(legend.position = 'bottom')
 ```
 
-### 4.1.2 Find communities
+### 4.2.2 Find communities
 
 ```{r}
-#| fig-width: 6
+#| fig-width: 10
 #| fig-height: 6
 
 g <- mc2_graph %>%
@@ -244,14 +274,7 @@ g <- mc2_graph %>%
 g + theme_graph()
 ```
 
-```{r}
-
-
-```
-
-## 4.2 Finding pattern
-
-### 4.2.1 new patterns
+### 4.2.3 Build interactive network graph.
 
 Prepare data for interactive network graph.
 
@@ -267,6 +290,8 @@ mc2_edges_aggregated2 <- mc2_edges_aggregated %>%
   ungroup
 ```
 
+Build an interactive network graph for checking the position of each node.
+
 ```{r}
 visNetwork(mc2_nodes_extracted %>%
              select(id)%>%
@@ -279,39 +304,124 @@ visNetwork(mc2_nodes_extracted %>%
   visLayout(randomSeed = 123)
 ```
 
-### 4.2.2 Visualizing
+## 4.3 Evaluate the sets of predicted knowledge graph links FishEye has provided
 
-Monthly income distributing quite evenly over different household size and joviality level.
+### 4.3.1 Read provided json files:
 
-```{r}
-
-```
-
-# 5. Evaluate the sets of predicted knowledge graph links FishEye has provided
-
-## 5.1 Read provided json files:
+Firstly read all 12 files provided by Fisheye into one table.
 
 ```{r}
-files <- c("data/bundles/carp.json", 
-           "data/bundles/catfish.json", 
-           "data/bundles/chub_mackerel.json",
-           "data/bundles/cod2.json",
-           "data/bundles/herring.json",
-           "data/bundles/lichen.json",
-           "data/bundles/mackerel.json",
-           "data/bundles/pollock.json",
-           "data/bundles/salmon_wgl.json",
-           "data/bundles/salmon.json",
-           "data/bundles/shark.json",
-           "data/bundles/tuna.json")
+files <- list.files(path = "data/bundles", full.names = TRUE)
 
-fisheye <- do.call("rbind", lapply(files, fromJSON))
+fisheye_files <- lapply(files, fromJSON)
+fisheyedata <- lapply(fisheye_files, function(json) {
+  json$nodes
+  json$links
+})
 ```
 
 ```{r}
-
+fisheye <- bind_rows(fisheyedata)
 ```
 
 ```{r}
-
+fisheye_edges <- as_tibble(fisheye) %>%
+  mutate(arrivaldate = ymd(arrivaldate)) %>%
+  mutate(year = year(arrivaldate)) %>%
+  select(source, target, generated_by, hscode, arrivaldate, year,weightkg) %>%
+  rename(group = generated_by) %>%
+  distinct()
 ```
+
+Then check number of edges by "hscode" and by "generagted_by" (here I renamed this column as "group")
+
+```{r}
+fisheye_hscode_count <-  fisheye_edges %>%
+  select(hscode,group,weightkg) %>%
+  group_by(hscode,group) %>%
+  summarise(count= n(),weightkg = sum(weightkg)) %>%
+  arrange(desc(weightkg))
+
+fisheye_hscode_count
+```
+
+### 4.3.2 Data wrangling for network graph:
+
+```{r}
+fisheye_edges_aggregated <- fisheye_edges %>%
+  group_by(source, target, hscode, year, group) %>%
+    summarise(weightkg = sum(weightkg)) %>%
+  filter(source!=target) %>%
+  filter(weightkg > 10000) %>%
+  ungroup()
+```
+
+```{r}
+ids <- fisheye_edges_aggregated %>%
+  select(source,group) %>%
+  rename(id = source)
+idt <- fisheye_edges_aggregated %>%
+  select(target,group) %>%
+  rename(id = target)
+fisheye_nodes_extracted <- rbind(ids, idt) %>%
+  distinct()
+```
+
+### 4.3.3 Visualize graph provided by Fisheye:
+
+```{r}
+fisheye_graph <- tbl_graph(nodes = fisheye_nodes_extracted,
+                       edges = fisheye_edges_aggregated,
+                       directed = TRUE)
+```
+
+-   Facet node graph by groups:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+set_graph_style()
+
+g <- ggraph(fisheye_graph, 
+            layout = "nicely") + 
+  geom_edge_link(aes(width=weightkg), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 5)) +
+  geom_node_point(aes(), 
+                  size = 0.5)
+  
+g + facet_nodes(~group)+
+  th_foreground(foreground = "grey90",  
+                border = TRUE) +
+  theme(legend.position = 'bottom')
+```
+
+-   Facet network graph by groups:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+set_graph_style() 
+
+g <- ggraph(fisheye_graph, 
+            layout = "nicely") + 
+  geom_edge_link(aes(linewidth=weightkg), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 5)) +
+  geom_node_point(aes(color = group), size = 0.5) +
+  theme(legend.position = 'bottom')
+  
+g + facet_edges(~group)+
+  th_foreground(foreground = "grey90",  
+                border = TRUE)  
+```
+
+::: callout-caution
+### Conclusion:
+
+Here I will select "carp" group as the new set of links to add into mc2 graph, since from the facet nodes graph I can see this set of link got most and sparsest of nodes, indicating this set should be able to contribute the most to the original graph. At the same time, the facet network graph show not much difference between groups.
+:::
+
+# 5. Pattern Analysis After Adding new links

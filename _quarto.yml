@@ -31,11 +31,13 @@ website:
             href: "Take-home_Ex/Take-home_Ex01/Take-home_Ex01.html"
           - text: "Take Home_Ex 2"
             href: "Take-home_Ex/Take-home_Ex02/Take-home_Ex02.html"
+          - text: "Take Home_Ex 3"
+            href: "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html"
 
 
 format:
   html:
-    theme: cosmo
+    theme: flatly
     css: styles.css
     toc: true
 

@@ -92,7 +92,25 @@ Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need 
     hscode_heavy
     ```
 
--   Distribution of edges by years:
+-   Distribution of fishing weight (kg) by years:
+
+    ```{r}
+    #| fig-width: 6
+    #| fig-height: 3
+
+    fishing <- mc2_edges %>%
+             select(year, weightkg) %>%
+             group_by(year) %>%
+             summarise(weightkg = sum(weightkg))
+
+    ggplot(fishing,aes(x=year,y=weightkg)) +
+      geom_bar(stat = "identity") +
+      ggtitle("Fishing weight by years") +
+      xlab("Year") +
+      ylab("Weight (kg)")
+    ```
+
+-   Distribution of number of edges by years:
 
     ```{r}
     #| fig-width: 6
@@ -100,7 +118,7 @@ Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need 
 
     ggplot(data = mc2_edges, aes(x=year)) +
       geom_histogram(bins = 7, binwidth = 0.5) +
-      ggtitle("Totaol edges weights by years") +
+      ggtitle("Count of edges by years") +
       xlab("Year")
     ```
 
@@ -118,12 +136,12 @@ mc2_edges_aggregated <- mc2_edges %>%
   group_by(source, target, hscode, year) %>%
     summarise(weights = sum(weightkg)) %>%
   filter(source!=target) %>%
-  filter(weights > 1000000) %>%
   ungroup()
 ```
 
 ```{r}
 mc2_selected_companies <- mc2_edges_aggregated %>%
+  filter(weights > 1000000) %>%
   select(source,year,weights) %>%
   group_by(source, year) %>%
   summarize(weights = sum(weights)) %>%
@@ -157,7 +175,7 @@ heatmaply(normalize(companies_matrix[, -c(1, 2, 4, 5)]),
 
 ### 4.2.1 Build a network graph of those selected hscodes with most fishing weight:
 
--   Prepare the data
+-   Prepare the data and build a graph.
 
 ```{r}
 id1 <- mc2_edges_aggregated %>%
@@ -193,7 +211,7 @@ g <- ggraph(mc2_graph,
 g + theme_graph()
 ```
 
--   Build a facet graph by years to see the change of network in different years:
+-   Build a facet graph by years to see the change of network through years:
 
 ```{r}
 #| fig-width: 8
@@ -218,7 +236,7 @@ g + facet_edges(~year)+
 
 ```{r}
 #| fig-width: 8
-#| fig-height: 8
+#| fig-height: 6
 
 set_graph_style() 
 
@@ -239,7 +257,7 @@ g + facet_edges(~hscode)+
 
 ```{r}
 #| fig-width: 8
-#| fig-height: 8
+#| fig-height: 6
 
 set_graph_style()
 
@@ -345,14 +363,22 @@ fisheye_hscode_count <-  fisheye_edges %>%
 fisheye_hscode_count
 ```
 
+```{r}
+fisheye_edges %>%
+  select(group,weightkg) %>%
+  group_by(group) %>%
+  summarize(count = n(),
+            weight = sum(weightkg))
+```
+
 ### 4.3.2 Data wrangling for network graph:
 
 ```{r}
 fisheye_edges_aggregated <- fisheye_edges %>%
   group_by(source, target, hscode, year, group) %>%
-    summarise(weightkg = sum(weightkg)) %>%
+    summarise(count = n(),
+              weightkg = sum(weightkg)) %>%
   filter(source!=target) %>%
-  filter(weightkg > 10000) %>%
   ungroup()
 ```
 

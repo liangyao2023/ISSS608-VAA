@@ -1,0 +1,260 @@
+---
+title: "Take-home_Ex03"
+author: "LIANG YAO"
+date: '10 June 2023'
+date-modified: "`r Sys.Date()`"
+execute: 
+  warning: false
+  echo: true
+  eval: true
+format: 
+  html: 
+    code-fold: true
+    code-summary: "Show the code"
+---
+
+# 1. Task and Questions:
+
+### Objectives:
+
+FishEye International, a non-profit focused on countering illegal, unreported, and unregulated (IUU) fishing, has been given access to an international finance corporation\'s database on fishing related companies. In the past, FishEye has determined that companies with anomalous structures are far more likely to be involved in IUU (or other \"fishy\" business). FishEye has transformed the database into a knowledge graph. It includes information about companies, owners, workers, and financial status. FishEye is aiming to use this graph to identify anomalies that could indicate a company is involved in IUU.
+
+FishEye analysts have attempted to use traditional node-link visualizations and standard graph analyses, but these were found to be ineffective because the scale and detail in the data can obscure a business\'s true structure. Can you help FishEye develop a new visual analytics approach to better understand fishing business anomalies?
+
+### Questions:
+
+Use visual analytics to understand patterns of groups in the knowledge graph and highlight anomalous groups.
+
+1.  Use visual analytics to identify anomalies in the business groups present in the knowledge graph. Limit your response to 400 words and 5 images.
+
+2.  Develop a visual analytics process to find similar businesses and group them. This analysis should focus on a business\'s most important features and present those features clearly to the user. Limit your response to 400 words and 5 images.
+
+3.  Measure similarity of businesses that you group in the previous question. Express confidence in your groupings visually. Limit your response to 400 words and 4 images.
+
+4.  Based on your visualizations, provide evidence for or against the case that anomalous companies are involved in illegal fishing. Which business groups should FishEye investigate further? Limit your response to 600 words and 6 images.
+
+# 2. Load packages and data:
+
+```{r}
+pacman::p_load(igraph, tidygraph, ggraph, visNetwork, lubridate, 
+               tidyverse, graphlayouts, jsonlite,tidyr,heatmaply,stringr)
+```
+
+```{r}
+mc3 <- jsonlite::fromJSON("data/MC3.json")
+```
+
+# 3. Data checking/cleaning:
+
+## 3.1 Find the nodes and edges:
+
+```{r}
+#view(mc2[["nodes"]])
+mc3_nodes <- as_tibble(mc3$nodes) %>%
+  select(country, id, product_services, revenue_omu, type)
+```
+
+```{r}
+#view(mc2[["links"]])
+mc3_edges <- as_tibble(mc3$links) %>%
+  select(source, target, type) %>%
+  distinct()
+```
+
+```{r}
+glimpse(mc3_edges)
+```
+
+```{r}
+mc3_edges %>%
+  select(type) %>%
+  group_by(type) %>%
+  summarise(count = n())
+```
+
+::: callout-note
+### Note:
+
+Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need to be changed to 'date' type. And a new column added to indicate years.
+:::
+
+## 3.2 Wrangling attributes:
+
+-   Find hscode with most edges and hscode with most weightkg of fishing:
+
+    ```{r}
+
+    ```
+
+-   Distribution of fishing weight (kg) by years:
+
+    ```{r}
+    #| fig-width: 6
+    #| fig-height: 3
+
+
+    ```
+
+-   Distribution of number of edges by years:
+
+# 4. Pattern Analysis & Visualization
+
+## 4.1 Visualizing temporal patterns for individual entities by heatmap
+
+### 4.1.1 Transforming the data frame into a matrix
+
+Find edges filtering by those majority hscodes.
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+### 4.1.2 Building heatmap
+
+```{r}
+#| fig-width: 6
+#| fig-height: 8
+
+
+```
+
+## 4.2 Visualizing links between companies
+
+### 4.2.1 Build a network graph of those selected hscodes with most fishing weight:
+
+-   Prepare the data and build a graph.
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+-   Basic network graph to see the whole picture.
+
+```{r}
+#| fig-width: 7
+#| fig-height: 5
+
+
+```
+
+-   Build a facet graph by years to see the change of network through years:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+
+```
+
+-   Build a facet network graph by hscode:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 6
+
+
+```
+
+-   Build a facet_nodes graph by hscode to see the difference:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 6
+
+
+```
+
+### 4.2.2 Find communities
+
+```{r}
+#| fig-width: 10
+#| fig-height: 6
+
+
+```
+
+### 4.2.3 Build interactive network graph.
+
+Prepare data for interactive network graph.
+
+```{r}
+
+```
+
+Build an interactive network graph for checking the position of each node.
+
+```{r}
+
+```
+
+## 4.3 Evaluate the sets of predicted knowledge graph links FishEye has provided
+
+### 4.3.1 Read provided json files:
+
+Firstly read all 12 files provided by Fisheye into one table.
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+Then check number of edges by "hscode" and by "generagted_by" (here I renamed this column as "group")
+
+```{r}
+
+```
+
+### 4.3.2 Data wrangling for network graph:
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+### 4.3.3 Visualize graph provided by Fisheye:
+
+```{r}
+
+```
+
+-   Facet node graph by groups:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+
+```
+
+-   Facet network graph by groups:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+ 
+```
+
+::: callout-caution
+### Conclusion:
+
+Here I will select "carp" group as the new set of links to add into mc2 graph, since from the facet nodes graph I can see this set of link got most and sparsest of nodes, indicating this set should be able to contribute the most to the original graph. At the same time, the facet network graph show not much difference between groups.
+:::

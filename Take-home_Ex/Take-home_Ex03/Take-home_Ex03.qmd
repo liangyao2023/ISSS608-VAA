@@ -17,9 +17,9 @@ format:
 
 ### Objectives:
 
-FishEye International, a non-profit focused on countering illegal, unreported, and unregulated (IUU) fishing, has been given access to an international finance corporation\'s database on fishing related companies. In the past, FishEye has determined that companies with anomalous structures are far more likely to be involved in IUU (or other \"fishy\" business). FishEye has transformed the database into a knowledge graph. It includes information about companies, owners, workers, and financial status. FishEye is aiming to use this graph to identify anomalies that could indicate a company is involved in IUU.
+FishEye International, a non-profit focused on countering illegal, unreported, and unregulated (IUU) fishing, has been given access to an international finance corporation's database on fishing related companies. In the past, FishEye has determined that companies with anomalous structures are far more likely to be involved in IUU (or other "fishy" business). FishEye has transformed the database into a knowledge graph. It includes information about companies, owners, workers, and financial status. FishEye is aiming to use this graph to identify anomalies that could indicate a company is involved in IUU.
 
-FishEye analysts have attempted to use traditional node-link visualizations and standard graph analyses, but these were found to be ineffective because the scale and detail in the data can obscure a business\'s true structure. Can you help FishEye develop a new visual analytics approach to better understand fishing business anomalies?
+FishEye analysts have attempted to use traditional node-link visualizations and standard graph analyses, but these were found to be ineffective because the scale and detail in the data can obscure a business's true structure. Can you help FishEye develop a new visual analytics approach to better understand fishing business anomalies?
 
 ### Questions:
 
@@ -27,7 +27,7 @@ Use visual analytics to understand patterns of groups in the knowledge graph and
 
 1.  Use visual analytics to identify anomalies in the business groups present in the knowledge graph. Limit your response to 400 words and 5 images.
 
-2.  Develop a visual analytics process to find similar businesses and group them. This analysis should focus on a business\'s most important features and present those features clearly to the user. Limit your response to 400 words and 5 images.
+2.  Develop a visual analytics process to find similar businesses and group them. This analysis should focus on a business's most important features and present those features clearly to the user. Limit your response to 400 words and 5 images.
 
 3.  Measure similarity of businesses that you group in the previous question. Express confidence in your groupings visually. Limit your response to 400 words and 4 images.
 

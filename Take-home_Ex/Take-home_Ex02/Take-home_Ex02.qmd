@@ -1,7 +1,7 @@
 ---
 title: "Take-home_Ex02"
 author: "LIANG YAO"
-date: '27 May 2023'
+date: '4 June 2023'
 date-modified: "`r Sys.Date()`"
 execute: 
   warning: false
@@ -51,7 +51,8 @@ mc2 <- jsonlite::fromJSON("data/mc2_challenge_graph.json")
 ```{r}
 #view(mc2[["nodes"]])
 mc2_nodes <- as_tibble(mc2$nodes) %>%
-  select(id, shpcountry, rcvcountry)
+  select(id, shpcountry, rcvcountry) %>%
+  distinct()
 ```
 
 ```{r}
@@ -59,8 +60,14 @@ mc2_nodes <- as_tibble(mc2$nodes) %>%
 mc2_edges <- as_tibble(mc2$links) %>%
   mutate(arrivaldate = ymd(arrivaldate)) %>%
   mutate(year = year(arrivaldate)) %>%
-  select(source, target, weightkg, hscode, arrivaldate, year, volumeteu, valueofgoods_omu, valueofgoodsusd) %>%
+  select(source, target, weightkg, hscode, arrivaldate, year) %>%
+  drop_na() %>%
   distinct()
+
+mc2_edges <-  mc2_edges %>%
+  mutate(from = with(mc2_nodes, id[match(mc2_edges$source, id)]))%>%
+  mutate(to = with(mc2_nodes, id[match(mc2_edges$target, id)])) %>%
+  drop_na()
 ```
 
 ```{r}
@@ -73,54 +80,67 @@ glimpse(mc2_edges)
 Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need to be changed to 'date' type. And a new column added to indicate years.
 :::
 
-## 3.2 Wrangling attributes:
+## 3.2 Checking data distributions:
 
--   Find hscode with most edges and hscode with most weightkg of fishing:
+-   Distribution of shipments and weight(kg) by year:
 
-    ```{r}
-    hscode_count <-  mc2_edges %>%
-      select(hscode,weightkg) %>%
-      group_by(hscode) %>%
-      summarise(weightkg = sum(weightkg), count=n()) %>%
-      distinct() %>%
-      arrange(desc(weightkg))
+```{r}
+#| fig-width: 5
+#| fig-height: 6
+ 
+shipping <- mc2_edges %>%
+         select(year, weightkg) %>%
+         group_by(year) %>%
+         summarise(count=n(),weightkg = sum(weightkg),kg_per_ship=weightkg/count)
 
-    hscode_maj <- pull(select(hscode_count[hscode_count$count > 50000, ], hscode),hscode)
-    hscode_maj
+d <- highlight_key(shipping)
+p1 <- ggplot(data=d, 
+            aes(x = year,
+                y = count)) +
+  geom_bar(stat = "identity") +
+  xlab("Year") +
+  ylab("Count")
 
-    hscode_heavy <- pull(select(hscode_count[hscode_count$weightkg > 3000000000, ],hscode),hscode)
-    hscode_heavy
-    ```
+p2 <- ggplot(data=d, 
+            aes(x = year,
+                y = weightkg)) +
+  geom_bar(stat = "identity") +
+  xlab("Year") +
+  ylab("Weightkg")
 
--   Distribution of fishing weight (kg) by years:
+p3 <- ggplot(data=d, 
+            aes(x = year,
+                y = kg_per_ship)) +
+  geom_bar(stat = "identity") +
+  xlab("Year") +
+  ylab("average kg")
 
-    ```{r}
-    #| fig-width: 6
-    #| fig-height: 3
+subplot(ggplotly(p1),
+        ggplotly(p2),
+        ggplotly(p3),
+        shareX = TRUE,
+        nrows = 3,
+        titleY = TRUE)
+```
 
-    fishing <- mc2_edges %>%
-             select(year, weightkg) %>%
-             group_by(year) %>%
-             summarise(weightkg = sum(weightkg))
+::: callout-note
+### Note:
 
-    ggplot(fishing,aes(x=year,y=weightkg)) +
-      geom_bar(stat = "identity") +
-      ggtitle("Fishing weight by years") +
-      xlab("Year") +
-      ylab("Weight (kg)")
-    ```
+Here we can conclude from the distribution of shipment by year that the weight per shipment of year 2032 is significantly higher than other years, indicating possible abnormal fishing volume in this year. For later using, I will focus on those hscode with most number of shipment during 2032.
+:::
 
--   Distribution of number of edges by years:
+-   Check number of shipments and fishing weights in 2032 by hscode.
 
-    ```{r}
-    #| fig-width: 6
-    #| fig-height: 3
-
-    ggplot(data = mc2_edges, aes(x=year)) +
-      geom_histogram(bins = 7, binwidth = 0.5) +
-      ggtitle("Count of edges by years") +
-      xlab("Year")
-    ```
+```{r}
+hscode_count <-  mc2_edges %>%
+  filter(year==2032) %>%
+  select(hscode,weightkg) %>%
+  group_by(hscode) %>%
+  summarise(weightkg = sum(weightkg), count=n(), kg_per_ship=weightkg/count) %>%
+  distinct() %>%
+  arrange(desc(count))
+hscode_count
+```
 
 # 4. Pattern Analysis & Visualization
 
@@ -128,24 +148,22 @@ Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need 
 
 ### 4.1.1 Transforming the data frame into a matrix
 
-Find edges filtering by those majority hscodes.
-
 ```{r}
-mc2_edges_aggregated <- mc2_edges %>%
-  filter(hscode == hscode_heavy) %>%
-  group_by(source, target, hscode, year) %>%
-    summarise(weights = sum(weightkg)) %>%
-  filter(source!=target) %>%
-  ungroup()
-```
+mc2_selected_id <- pull(mc2_edges %>% 
+                                 select(source) %>% 
+                                 group_by(source) %>%
+                                 summarize(count=n()) %>%
+                                 filter(count > 20000) %>%
+                                 distinct() %>%
+                                 rename(id=source), 
+                               id)
 
-```{r}
-mc2_selected_companies <- mc2_edges_aggregated %>%
-  filter(weights > 1000000) %>%
-  select(source,year,weights) %>%
-  group_by(source, year) %>%
-  summarize(weights = sum(weights)) %>%
-  pivot_wider(names_from = year, values_from = weights, values_fill = 0) 
+mc2_selected_companies <- mc2_edges %>%
+  filter(source == mc2_selected_id) %>%
+  select(source,year,weightkg) %>%
+  group_by(source,year) %>%
+  summarize(kg_per_ship=sum(weightkg)/n()) %>%
+  pivot_wider(names_from = year, values_from = kg_per_ship, values_fill = 0) 
 
 row.names(mc2_selected_companies) <- mc2_selected_companies$source
 companies_matrix <- data.matrix(mc2_selected_companies)
@@ -157,7 +175,7 @@ companies_matrix <- data.matrix(mc2_selected_companies)
 #| fig-width: 6
 #| fig-height: 8
 
-heatmaply(normalize(companies_matrix[, -c(1, 2, 4, 5)]),
+heatmaply(normalize(companies_matrix[, -c(1, 5)]),
           Colv=NA,
           seriate = "none",
           colors = Blues,
@@ -165,160 +183,154 @@ heatmaply(normalize(companies_matrix[, -c(1, 2, 4, 5)]),
           margins = c(NA,200,60,NA),
           fontsize_row = 6,
           fontsize_col = 6,
-          main="Companies' change of fishing weights by years",
-          xlab = "Years",
+          main="Companies' change of fishing weights per shipment by year",
+          xlab = "Year",
           ylab = "Companies"
           )
 ```
 
-## 4.2 Visualizing links between companies
+## 4.2 Visualizing networks
 
-### 4.2.1 Build a network graph of those selected hscodes with most fishing weight:
+### 4.2.1 Preparing data:
 
--   Prepare the data and build a graph.
+-   Find hscode with most shipment in 2032, here I will pull out those hscode with more than 10K shipments in total.
 
 ```{r}
-id1 <- mc2_edges_aggregated %>%
-  select(source,hscode) %>%
-  rename(id = source)
-id2 <- mc2_edges_aggregated %>%
-  select(target,hscode) %>%
-  rename(id = target)
-mc2_nodes_extracted <- rbind(id1, id2) %>%
-  distinct()
+hscode_maj <- pull(select(hscode_count[hscode_count$count > 10000, ], hscode),hscode)
+hscode_maj
 ```
 
-```{r}
-mc2_graph <- tbl_graph(nodes = mc2_nodes_extracted,
-                       edges = mc2_edges_aggregated,
-                       directed = TRUE)
-```
-
--   Basic network graph to see the whole picture.
+-   Filtering edges by 2032 and set count as weights.
 
 ```{r}
-#| fig-width: 7
-#| fig-height: 5
-
-g <- ggraph(mc2_graph, 
-            layout = "nicely") +
-  geom_edge_link(aes(linewidth=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 2)) +
-  geom_node_point(aes(colour = hscode), 
-                  size = 1)
-
-g + theme_graph()
-```
-
--   Build a facet graph by years to see the change of network through years:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 8
-
-set_graph_style() 
-
-g <- ggraph(mc2_graph, 
-            layout = "nicely") + 
-  geom_edge_link(aes(linewidth=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(color = hscode), size = 0.5) +
-  theme(legend.position = 'bottom')
-  
-g + facet_edges(~year)+
-  th_foreground(foreground = "grey90",  
-                border = TRUE)  
-```
-
--   Build a facet network graph by hscode:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 6
-
-set_graph_style() 
-
-g <- ggraph(mc2_graph, 
-            layout = "nicely") + 
-  geom_edge_link(aes(linewidth=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(color = hscode), size = 0.5) +
-  theme(legend.position = 'bottom')
-  
-g + facet_edges(~hscode)+
-  th_foreground(foreground = "grey90",  
-                border = TRUE)  
-```
-
--   Build a facet_nodes graph by hscode to see the difference:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 6
-
-set_graph_style()
-
-g <- ggraph(mc2_graph, 
-            layout = "nicely") + 
-  geom_edge_link(aes(width=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(), 
-                  size = 0.5)
-  
-g + facet_nodes(~hscode)+
-  th_foreground(foreground = "grey90",  
-                border = TRUE) +
-  theme(legend.position = 'bottom')
-```
-
-### 4.2.2 Find communities
-
-```{r}
-#| fig-width: 10
-#| fig-height: 6
-
-g <- mc2_graph %>%
-  mutate(community = as.factor(group_edge_betweenness(weights = weights, directed = TRUE))) %>%
-  ggraph(layout = "fr") + 
-  geom_edge_link(aes(width=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(colour = community))  
-
-g + theme_graph()
-```
-
-### 4.2.3 Build interactive network graph.
-
-Prepare data for interactive network graph.
-
-```{r}
-mc2_edges_aggregated$from <- with(mc2_nodes, id[match(mc2_edges_aggregated$source, id)])
-mc2_edges_aggregated$to <- with(mc2_nodes, id[match(mc2_edges_aggregated$target, id)])
-
-mc2_edges_aggregated2 <- mc2_edges_aggregated %>%
-  group_by(from, to) %>%
+mc2_edges_aggregated <- mc2_edges %>%
+  filter(year == 2032) %>%
+  group_by(source, target, hscode, from, to) %>%
   summarise(weights = n()) %>%
+  filter(source!=target) %>%
+  ungroup()
+
+glimpse(mc2_edges_aggregated)
+```
+
+### 4.2.2 Build network graph for hscode1:
+
+-   Find edges of hscode1.
+
+```{r}
+mc2_edges_hscode1 <- mc2_edges_aggregated %>%
+  filter(hscode == hscode_maj[1]) %>%
+  group_by(from, to) %>%
+  summarise(weights = sum(weights)) %>%
   filter(from!=to) %>%
-  filter(weights > 1) %>%
   ungroup
 ```
 
-Build an interactive network graph for checking the position of each node.
+-   Extract nodes.
 
 ```{r}
-visNetwork(mc2_nodes_extracted %>%
-             select(id)%>%
-             distinct(),
-           mc2_edges_aggregated2) %>%
+mc2_nodes_hscode1 <- rbind(mc2_edges_hscode1 %>%
+                                select(from)%>%
+                                rename(id=from),
+                              mc2_edges_hscode1 %>%
+                                select(to)%>%
+                                rename(id=to)) %>% distinct()
+```
+
+-   Build network graph.
+
+```{r}
+mc2_graph_hscode1 <- tbl_graph(nodes = mc2_nodes_hscode1,
+                       edges = mc2_edges_hscode1,
+                       directed = TRUE)
+```
+
+```{r}
+ggraph(mc2_graph_hscode1, 
+            layout = "fr") +
+  geom_edge_link(aes(width=weights), 
+                 alpha=0.2) +
+  scale_edge_width(range = c(0.1, 2)) +
+  geom_node_point(aes(), 
+                  size = 0.8) + 
+  theme_graph()
+```
+
+-   Build interactive network graph.
+
+```{r}
+visNetwork(mc2_nodes_hscode1,mc2_edges_hscode1) %>%
   visIgraphLayout(layout = "layout_with_fr") %>%
   visOptions(highlightNearest = TRUE,
              nodesIdSelection = TRUE) %>%
-  visLegend() %>%
+  visLayout(randomSeed = 123)
+```
+
+### 4.2.3 Build network graph for hscode2:
+
+-   Find edges of hscode2.
+
+```{r}
+mc2_edges_hscode2 <- mc2_edges_aggregated %>%
+  filter(hscode == hscode_maj[2]) %>%
+  group_by(from, to) %>%
+  summarise(weights = sum(weights)) %>%
+  filter(from!=to) %>%
+  ungroup
+```
+
+-   Extract nodes.
+
+```{r}
+mc2_nodes_hscode2 <- rbind(mc2_edges_hscode2 %>%
+                                select(from)%>%
+                                rename(id=from),
+                          mc2_edges_hscode2 %>%
+                                select(to)%>%
+                                rename(id=to)) %>% distinct()
+```
+
+-   Build interactive network graph.
+
+```{r}
+visNetwork(mc2_nodes_hscode2,mc2_edges_hscode2) %>%
+  visIgraphLayout(layout = "layout_with_kk") %>%
+  visOptions(highlightNearest = TRUE,
+             nodesIdSelection = TRUE) %>%
+  visLayout(randomSeed = 123)
+```
+
+### 4.2.4 Build network graph for hscode3:
+
+-   Find edges of hscode3.
+
+```{r}
+mc2_edges_hscode3 <- mc2_edges_aggregated %>%
+  filter(hscode == hscode_maj[3]) %>%
+  group_by(from, to) %>%
+  summarise(weights = sum(weights)) %>%
+  filter(from!=to) %>%
+  ungroup
+```
+
+-   Extract nodes.
+
+```{r}
+mc2_nodes_hscode3 <- rbind(mc2_edges_hscode3 %>%
+                                select(from)%>%
+                                rename(id=from),
+                          mc2_edges_hscode3 %>%
+                                select(to)%>%
+                                rename(id=to)) %>% distinct()
+```
+
+-   Build interactive network graph.
+
+```{r}
+visNetwork(mc2_nodes_hscode3,mc2_edges_hscode3) %>%
+  visIgraphLayout(layout = "layout_with_kk") %>%
+  visOptions(highlightNearest = TRUE,
+             nodesIdSelection = TRUE) %>%
   visLayout(randomSeed = 123)
 ```
 
@@ -336,9 +348,7 @@ fisheyedata <- lapply(fisheye_files, function(json) {
   json$nodes
   json$links
 })
-```
 
-```{r}
 fisheye <- bind_rows(fisheyedata)
 ```
 
@@ -348,27 +358,20 @@ fisheye_edges <- as_tibble(fisheye) %>%
   mutate(year = year(arrivaldate)) %>%
   select(source, target, generated_by, hscode, arrivaldate, year,weightkg) %>%
   rename(group = generated_by) %>%
+#  drop_na() %>%
   distinct()
 ```
 
-Then check number of edges by "hscode" and by "generagted_by" (here I renamed this column as "group")
+Then check number of edges by year and by "generagted_by" (here I renamed this column as "group")
 
 ```{r}
-fisheye_hscode_count <-  fisheye_edges %>%
-  select(hscode,group,weightkg) %>%
-  group_by(hscode,group) %>%
+fisheye_count <-  fisheye_edges %>%
+  select(year,group,weightkg) %>%
+  group_by(year,group) %>%
   summarise(count= n(),weightkg = sum(weightkg)) %>%
-  arrange(desc(weightkg))
+  arrange(year)
 
-fisheye_hscode_count
-```
-
-```{r}
-fisheye_edges %>%
-  select(group,weightkg) %>%
-  group_by(group) %>%
-  summarize(count = n(),
-            weight = sum(weightkg))
+fisheye_count
 ```
 
 ### 4.3.2 Data wrangling for network graph:
@@ -376,20 +379,18 @@ fisheye_edges %>%
 ```{r}
 fisheye_edges_aggregated <- fisheye_edges %>%
   group_by(source, target, hscode, year, group) %>%
-    summarise(count = n(),
-              weightkg = sum(weightkg)) %>%
+    summarise(weights = n()) %>%
   filter(source!=target) %>%
   ungroup()
 ```
 
 ```{r}
-ids <- fisheye_edges_aggregated %>%
+fisheye_nodes_extracted <- rbind(fisheye_edges_aggregated %>%
   select(source,group) %>%
-  rename(id = source)
-idt <- fisheye_edges_aggregated %>%
+  rename(id = source), 
+  fisheye_edges_aggregated %>%
   select(target,group) %>%
-  rename(id = target)
-fisheye_nodes_extracted <- rbind(ids, idt) %>%
+  rename(id = target)) %>%
   distinct()
 ```
 
@@ -401,53 +402,51 @@ fisheye_graph <- tbl_graph(nodes = fisheye_nodes_extracted,
                        directed = TRUE)
 ```
 
--   Facet node graph by groups:
-
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
-
-set_graph_style()
-
-g <- ggraph(fisheye_graph, 
-            layout = "nicely") + 
-  geom_edge_link(aes(width=weightkg), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(), 
-                  size = 0.5)
-  
-g + facet_nodes(~group)+
-  th_foreground(foreground = "grey90",  
-                border = TRUE) +
-  theme(legend.position = 'bottom')
-```
-
--   Facet network graph by groups:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 8
-
 set_graph_style() 
 
-g <- ggraph(fisheye_graph, 
+ggraph(fisheye_graph, 
             layout = "nicely") + 
-  geom_edge_link(aes(linewidth=weightkg), 
+  geom_edge_link(aes(linewidth=weights), 
                  alpha=0.2) +
   scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(color = group), size = 0.5) +
-  theme(legend.position = 'bottom')
-  
-g + facet_edges(~group)+
+  geom_node_point(aes(), size = 0.5) +
+  theme(legend.position = 'bottom')+ 
+  facet_nodes(~group)+
   th_foreground(foreground = "grey90",  
                 border = TRUE)  
 ```
 
 ::: callout-caution
-### Conclusion:
+### Minding Here:
 
-Here I will select "carp" group as the new set of links to add into mc2 graph, since from the facet nodes graph I can see this set of link got most and sparsest of nodes, indicating this set should be able to contribute the most to the original graph. At the same time, the facet network graph show not much difference between groups.
+Here I will firstly choose those set of links with more nodes. The final choice can be made only after we saw the complementary effect after we add those links to original network.
 :::
 
-# 5. Pattern Analysis After Adding new links
+-   Build network graph for selected set of links:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+selected_links <- c('carp','catfish','chub_mackerel','herring','mackerel','pollock','salmon_wgl')
+
+fisheye_selected_edges <- fisheye_edges_aggregated %>%
+             filter(group == selected_links) %>%
+             rename(from = source) %>%
+             rename(to = target)
+
+fisheye_selected_nodes <- rbind(fisheye_selected_edges %>%
+                                select(from)%>%
+                                rename(id=from),
+                                fisheye_selected_edges %>%
+                                select(to)%>%
+                                rename(id=to)) %>% distinct()
+
+visNetwork(fisheye_selected_nodes,
+           fisheye_selected_edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>%
+  visOptions(highlightNearest = TRUE,
+             nodesIdSelection = TRUE) %>%
+  visLayout(randomSeed = 123)
+```

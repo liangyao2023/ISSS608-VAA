@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.313">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="LIANG YAO">
+<meta name="dcterms.date" content="2023-06-10">
+
+<title>ISSS608-VAA - Take-home_Ex03</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">ISSS608-VAA</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html">
+ <span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-in-class_ex" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">In class_Ex</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-in-class_ex">    
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex03/In-class_Ex03.html">
+ <span class="dropdown-text">In class_Ex 3</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex04/In-class_Ex04.html">
+ <span class="dropdown-text">In class_Ex 4</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-hands-on_ex" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Hands on_Ex</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-hands-on_ex">    
+        <li>
+    <a class="dropdown-item" href="../../Handson_Ex/Handson_Ex01/Handson_Ex01.html">
+ <span class="dropdown-text">Hands on_Ex 1</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Handson_Ex/Handson_Ex03/Handson_Ex03.html">
+ <span class="dropdown-text">Hands on_Ex 3</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Handson_Ex/Handson_Ex04/Handson_Ex04.html">
+ <span class="dropdown-text">Hands on_Ex 4</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Handson_Ex/Handson_Ex05/Handson_Ex05.html">
+ <span class="dropdown-text">Hands on_Ex 5</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Handson_Ex/Handson_Ex06/Handson_Ex06.html">
+ <span class="dropdown-text">Hands on_Ex 6</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-take-home_ex" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Take Home_Ex</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-take-home_ex">    
+        <li>
+    <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex01/Take-home_Ex01.html">
+ <span class="dropdown-text">Take Home_Ex 1</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex02/Take-home_Ex02.html">
+ <span class="dropdown-text">Take Home_Ex 2</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html">
+ <span class="dropdown-text">Take Home_Ex 3</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#task-and-questions" id="toc-task-and-questions" class="nav-link active" data-scroll-target="#task-and-questions">1. Task and Questions:</a>
+  <ul class="collapse">
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives">Objectives:</a></li>
+  <li><a href="#questions" id="toc-questions" class="nav-link" data-scroll-target="#questions">Questions:</a></li>
+  </ul></li>
+  <li><a href="#load-packages-and-data" id="toc-load-packages-and-data" class="nav-link" data-scroll-target="#load-packages-and-data">2. Load packages and data:</a></li>
+  <li><a href="#data-checkingcleaning" id="toc-data-checkingcleaning" class="nav-link" data-scroll-target="#data-checkingcleaning">3. Data checking/cleaning:</a>
+  <ul class="collapse">
+  <li><a href="#find-the-nodes-and-edges" id="toc-find-the-nodes-and-edges" class="nav-link" data-scroll-target="#find-the-nodes-and-edges">3.1 Find the nodes and edges:</a></li>
+  <li><a href="#wrangling-attributes" id="toc-wrangling-attributes" class="nav-link" data-scroll-target="#wrangling-attributes">3.2 Wrangling attributes:</a></li>
+  </ul></li>
+  <li><a href="#pattern-analysis-visualization" id="toc-pattern-analysis-visualization" class="nav-link" data-scroll-target="#pattern-analysis-visualization">4. Pattern Analysis &amp; Visualization</a>
+  <ul class="collapse">
+  <li><a href="#visualizing-temporal-patterns-for-individual-entities-by-heatmap" id="toc-visualizing-temporal-patterns-for-individual-entities-by-heatmap" class="nav-link" data-scroll-target="#visualizing-temporal-patterns-for-individual-entities-by-heatmap">4.1 Visualizing temporal patterns for individual entities by heatmap</a>
+  <ul class="collapse">
+  <li><a href="#transforming-the-data-frame-into-a-matrix" id="toc-transforming-the-data-frame-into-a-matrix" class="nav-link" data-scroll-target="#transforming-the-data-frame-into-a-matrix">4.1.1 Transforming the data frame into a matrix</a></li>
+  <li><a href="#building-heatmap" id="toc-building-heatmap" class="nav-link" data-scroll-target="#building-heatmap">4.1.2 Building heatmap</a></li>
+  </ul></li>
+  <li><a href="#visualizing-links-between-companies" id="toc-visualizing-links-between-companies" class="nav-link" data-scroll-target="#visualizing-links-between-companies">4.2 Visualizing links between companies</a>
+  <ul class="collapse">
+  <li><a href="#build-a-network-graph-of-those-selected-hscodes-with-most-fishing-weight" id="toc-build-a-network-graph-of-those-selected-hscodes-with-most-fishing-weight" class="nav-link" data-scroll-target="#build-a-network-graph-of-those-selected-hscodes-with-most-fishing-weight">4.2.1 Build a network graph of those selected hscodes with most fishing weight:</a></li>
+  <li><a href="#find-communities" id="toc-find-communities" class="nav-link" data-scroll-target="#find-communities">4.2.2 Find communities</a></li>
+  <li><a href="#build-interactive-network-graph." id="toc-build-interactive-network-graph." class="nav-link" data-scroll-target="#build-interactive-network-graph.">4.2.3 Build interactive network graph.</a></li>
+  </ul></li>
+  <li><a href="#evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided" id="toc-evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided" class="nav-link" data-scroll-target="#evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided">4.3 Evaluate the sets of predicted knowledge graph links FishEye has provided</a>
+  <ul class="collapse">
+  <li><a href="#read-provided-json-files" id="toc-read-provided-json-files" class="nav-link" data-scroll-target="#read-provided-json-files">4.3.1 Read provided json files:</a></li>
+  <li><a href="#data-wrangling-for-network-graph" id="toc-data-wrangling-for-network-graph" class="nav-link" data-scroll-target="#data-wrangling-for-network-graph">4.3.2 Data wrangling for network graph:</a></li>
+  <li><a href="#visualize-graph-provided-by-fisheye" id="toc-visualize-graph-provided-by-fisheye" class="nav-link" data-scroll-target="#visualize-graph-provided-by-fisheye">4.3.3 Visualize graph provided by Fisheye:</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Take-home_Ex03</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>LIANG YAO </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 10, 2023</p>
+    </div>
+  </div>
+  
+    <div>
+    <div class="quarto-title-meta-heading">Modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">May 27, 2023</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+</header>
+
+<section id="task-and-questions" class="level1">
+<h1>1. Task and Questions:</h1>
+<section id="objectives" class="level3">
+<h3 class="anchored" data-anchor-id="objectives">Objectives:</h3>
+<p>FishEye International, a non-profit focused on countering illegal, unreported, and unregulated (IUU) fishing, has been given access to an international finance corporation’s database on fishing related companies. In the past, FishEye has determined that companies with anomalous structures are far more likely to be involved in IUU (or other “fishy” business). FishEye has transformed the database into a knowledge graph. It includes information about companies, owners, workers, and financial status. FishEye is aiming to use this graph to identify anomalies that could indicate a company is involved in IUU.</p>
+<p>FishEye analysts have attempted to use traditional node-link visualizations and standard graph analyses, but these were found to be ineffective because the scale and detail in the data can obscure a business’s true structure. Can you help FishEye develop a new visual analytics approach to better understand fishing business anomalies?</p>
+</section>
+<section id="questions" class="level3">
+<h3 class="anchored" data-anchor-id="questions">Questions:</h3>
+<p>Use visual analytics to understand patterns of groups in the knowledge graph and highlight anomalous groups.</p>
+<ol type="1">
+<li><p>Use visual analytics to identify anomalies in the business groups present in the knowledge graph. Limit your response to 400 words and 5 images.</p></li>
+<li><p>Develop a visual analytics process to find similar businesses and group them. This analysis should focus on a business’s most important features and present those features clearly to the user. Limit your response to 400 words and 5 images.</p></li>
+<li><p>Measure similarity of businesses that you group in the previous question. Express confidence in your groupings visually. Limit your response to 400 words and 4 images.</p></li>
+<li><p>Based on your visualizations, provide evidence for or against the case that anomalous companies are involved in illegal fishing. Which business groups should FishEye investigate further? Limit your response to 600 words and 6 images.</p></li>
+</ol>
+</section>
+</section>
+<section id="load-packages-and-data" class="level1">
+<h1>2. Load packages and data:</h1>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(igraph, tidygraph, ggraph, visNetwork, lubridate, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>               tidyverse, graphlayouts, jsonlite,tidyr,heatmaply,stringr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mc3 <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(<span class="st">"data/MC3.json"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="data-checkingcleaning" class="level1">
+<h1>3. Data checking/cleaning:</h1>
+<section id="find-the-nodes-and-edges" class="level2">
+<h2 class="anchored" data-anchor-id="find-the-nodes-and-edges">3.1 Find the nodes and edges:</h2>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#view(mc2[["nodes"]])</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>mc3_nodes <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mc3<span class="sc">$</span>nodes) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(country, id, product_services, revenue_omu, type)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#view(mc2[["links"]])</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mc3_edges <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mc3<span class="sc">$</span>links) <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(source, target, type) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(mc3_edges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 24,036
+Columns: 3
+$ source &lt;list&gt; "Lake Chad  Catchers Limited Liability Company Worldwide", "La…
+$ target &lt;list&gt; "Erin Flores", "Linda Lee", "Sharon Coleman", "John Rivera", "…
+$ type   &lt;list&gt; "Beneficial Owner", "Beneficial Owner", "Beneficial Owner", "B…</code></pre>
+</div>
+</div>
+<div class="cell">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>mc3_edges <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(type) <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(type) <span class="sc">%&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  type      count
+  &lt;list&gt;    &lt;int&gt;
+1 &lt;chr [1]&gt; 16792
+2 &lt;chr [1]&gt;  7244</code></pre>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Note:
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Here the ‘arrivaldate’ column of edges is treated as ‘chr’ datatype, would need to be changed to ‘date’ type. And a new column added to indicate years.</p>
+</div>
+</div>
+</section>
+<section id="wrangling-attributes" class="level2">
+<h2 class="anchored" data-anchor-id="wrangling-attributes">3.2 Wrangling attributes:</h2>
+<ul>
+<li><p>Find hscode with most edges and hscode with most weightkg of fishing:</p>
+<div class="cell">
+
+</div></li>
+<li><p>Distribution of fishing weight (kg) by years:</p>
+<div class="cell">
+
+</div></li>
+<li><p>Distribution of number of edges by years:</p></li>
+</ul>
+</section>
+</section>
+<section id="pattern-analysis-visualization" class="level1">
+<h1>4. Pattern Analysis &amp; Visualization</h1>
+<section id="visualizing-temporal-patterns-for-individual-entities-by-heatmap" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-temporal-patterns-for-individual-entities-by-heatmap">4.1 Visualizing temporal patterns for individual entities by heatmap</h2>
+<section id="transforming-the-data-frame-into-a-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="transforming-the-data-frame-into-a-matrix">4.1.1 Transforming the data frame into a matrix</h3>
+<p>Find edges filtering by those majority hscodes.</p>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+</section>
+<section id="building-heatmap" class="level3">
+<h3 class="anchored" data-anchor-id="building-heatmap">4.1.2 Building heatmap</h3>
+<div class="cell">
+
+</div>
+</section>
+</section>
+<section id="visualizing-links-between-companies" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-links-between-companies">4.2 Visualizing links between companies</h2>
+<section id="build-a-network-graph-of-those-selected-hscodes-with-most-fishing-weight" class="level3">
+<h3 class="anchored" data-anchor-id="build-a-network-graph-of-those-selected-hscodes-with-most-fishing-weight">4.2.1 Build a network graph of those selected hscodes with most fishing weight:</h3>
+<ul>
+<li>Prepare the data and build a graph.</li>
+</ul>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<ul>
+<li>Basic network graph to see the whole picture.</li>
+</ul>
+<div class="cell">
+
+</div>
+<ul>
+<li>Build a facet graph by years to see the change of network through years:</li>
+</ul>
+<div class="cell">
+
+</div>
+<ul>
+<li>Build a facet network graph by hscode:</li>
+</ul>
+<div class="cell">
+
+</div>
+<ul>
+<li>Build a facet_nodes graph by hscode to see the difference:</li>
+</ul>
+<div class="cell">
+
+</div>
+</section>
+<section id="find-communities" class="level3">
+<h3 class="anchored" data-anchor-id="find-communities">4.2.2 Find communities</h3>
+<div class="cell">
+
+</div>
+</section>
+<section id="build-interactive-network-graph." class="level3">
+<h3 class="anchored" data-anchor-id="build-interactive-network-graph.">4.2.3 Build interactive network graph.</h3>
+<p>Prepare data for interactive network graph.</p>
+<div class="cell">
+
+</div>
+<p>Build an interactive network graph for checking the position of each node.</p>
+<div class="cell">
+
+</div>
+</section>
+</section>
+<section id="evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided" class="level2">
+<h2 class="anchored" data-anchor-id="evaluate-the-sets-of-predicted-knowledge-graph-links-fisheye-has-provided">4.3 Evaluate the sets of predicted knowledge graph links FishEye has provided</h2>
+<section id="read-provided-json-files" class="level3">
+<h3 class="anchored" data-anchor-id="read-provided-json-files">4.3.1 Read provided json files:</h3>
+<p>Firstly read all 12 files provided by Fisheye into one table.</p>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<p>Then check number of edges by “hscode” and by “generagted_by” (here I renamed this column as “group”)</p>
+<div class="cell">
+
+</div>
+</section>
+<section id="data-wrangling-for-network-graph" class="level3">
+<h3 class="anchored" data-anchor-id="data-wrangling-for-network-graph">4.3.2 Data wrangling for network graph:</h3>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+</section>
+<section id="visualize-graph-provided-by-fisheye" class="level3">
+<h3 class="anchored" data-anchor-id="visualize-graph-provided-by-fisheye">4.3.3 Visualize graph provided by Fisheye:</h3>
+<div class="cell">
+
+</div>
+<ul>
+<li>Facet node graph by groups:</li>
+</ul>
+<div class="cell">
+
+</div>
+<ul>
+<li>Facet network graph by groups:</li>
+</ul>
+<div class="cell">
+
+</div>
+<div class="callout-caution callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Conclusion:
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Here I will select “carp” group as the new set of links to add into mc2 graph, since from the facet nodes graph I can see this set of link got most and sparsest of nodes, indicating this set should be able to contribute the most to the original graph. At the same time, the facet network graph show not much difference between groups.</p>
+</div>
+</div>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

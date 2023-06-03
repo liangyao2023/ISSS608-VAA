@@ -156,12 +156,6 @@ sprintf("hscode with highest weight(kg) per shipment: %s", hscode_top_avekg)
 
 ```
 
-```{r}
-head(hscode_count%>%
-                                filter(count>1000) %>%
-                                arrange(desc(kg_per_ship)),5)
-```
-
 # 4. Pattern Analysis & Visualization
 
 ## 4.1 Visualizing temporal patterns for individual entities by heatmap

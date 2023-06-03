@@ -36,8 +36,7 @@ Use visual analytics to understand patterns of groups in the knowledge graph and
 # 2. Load packages and data:
 
 ```{r}
-pacman::p_load(igraph, tidygraph, ggraph, visNetwork, lubridate, 
-               tidyverse, graphlayouts, jsonlite,tidyr,heatmaply,stringr)
+pacman::p_load(igraph, ggraph, visNetwork, tidyverse, graphlayouts, jsonlite, heatmaply, stringr, tidytext)
 ```
 
 ```{r}
@@ -51,14 +50,27 @@ mc3 <- jsonlite::fromJSON("data/MC3.json")
 ```{r}
 #view(mc2[["nodes"]])
 mc3_nodes <- as_tibble(mc3$nodes) %>%
-  select(country, id, product_services, revenue_omu, type)
+  mutate(country=as.character(country),
+         id=as.character(id),
+         product_services=as.character(product_services),
+         revenue_omu = as.numeric(as.character(revenue_omu)),
+         type=as.character(type)) %>%
+  select(id,country, type, revenue_omu, product_services) 
+#  group_by(id,country, type, product_services) %>%
+#  summarise(count=n(),revenue=sum(revenue_omu))
 ```
 
 ```{r}
 #view(mc2[["links"]])
 mc3_edges <- as_tibble(mc3$links) %>%
-  select(source, target, type) %>%
-  distinct()
+  distinct() %>%
+  mutate(source=as.character(source),
+         target=as.character(target),
+         type=as.character(type)) %>%
+  group_by(source, target, type) %>%
+  summarise(weight=n()) %>%
+  filter(source!=target) %>%
+  ungroup()
 ```
 
 ```{r}
@@ -72,10 +84,25 @@ mc3_edges %>%
   summarise(count = n())
 ```
 
+```{r}
+ggplot(data = mc3_nodes, 
+       aes(x=type)) +
+  geom_bar() +
+  xlab("Type")+
+  ylab("Count")
+```
+
+```{r}
+mc3_nodes %>%
+  select(product_services) %>%
+  group_by(product_services) %>%
+  summarise(count = n())
+```
+
 ::: callout-note
 ### Note:
 
-Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need to be changed to 'date' type. And a new column added to indicate years.
+Here before we do text analysis on product services, some stopwords like "character(0)" need to be treated.
 :::
 
 ## 3.2 Wrangling attributes:
@@ -83,17 +110,33 @@ Here the 'arrivaldate' column of edges is treated as 'chr' datatype, would need 
 -   Find hscode with most edges and hscode with most weightkg of fishing:
 
     ```{r}
-
+    mc3_nodes %>%
+      mutate(n_fish = str_count(product_services), "fish")
     ```
+
+Word tokenization with punctuation and no lowercasing
+
+```{r}
+tidy_nodes <- mc3_nodes %>%
+  unnest_tokens(word, product_services, to_lower = TRUE, strip_punct = TRUE)
+```
+
+Removing stop words
+
+```{r}
+tidy_stopwords <- tidy_nodes %>%
+  anti_join(stop_words) #%>%
+#  anti_join(by = c("character","0","unknown"))
+```
 
 -   Distribution of fishing weight (kg) by years:
 
-    ```{r}
-    #| fig-width: 6
-    #| fig-height: 3
+```{r}
+#| fig-width: 6
+#| fig-height: 3
 
 
-    ```
+```
 
 -   Distribution of number of edges by years:
 

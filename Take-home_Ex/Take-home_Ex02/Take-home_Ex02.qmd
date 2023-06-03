@@ -33,11 +33,16 @@ Second, FishEye has been using several tools, including artificial intelligence,
 
 4.  Identify companies that fit a pattern of illegal fishing. Use visualizations to support your conclusions and your confidence in them. Limit your response to 300 words and 4 images.
 
+::: callout-cautions
+Pleased be Noticed:
+
+Only Question 1 would be explored in this Exercise.
+:::
+
 # 2. Load packages and data:
 
 ```{r}
-pacman::p_load(igraph, tidygraph, ggraph, visNetwork, lubridate, 
-               tidyverse, graphlayouts, jsonlite,tidyr,heatmaply)
+pacman::p_load(igraph, ggraph, visNetwork, tidyverse, graphlayouts, jsonlite, heatmaply, tidygraph)
 ```
 
 ```{r}
@@ -67,7 +72,7 @@ mc2_edges <- as_tibble(mc2$links) %>%
 mc2_edges <-  mc2_edges %>%
   mutate(from = with(mc2_nodes, id[match(mc2_edges$source, id)]))%>%
   mutate(to = with(mc2_nodes, id[match(mc2_edges$target, id)])) %>%
-  drop_na()
+  distinct()
 ```
 
 ```{r}
@@ -140,6 +145,21 @@ hscode_count <-  mc2_edges %>%
   distinct() %>%
   arrange(desc(count))
 hscode_count
+
+hscode_topcount <- pull(head(hscode_count, 1),hscode)
+hscode_top_avekg <- pull(head(hscode_count%>%
+                                filter(count>1000) %>%
+                                arrange(desc(kg_per_ship)),1),hscode)
+
+sprintf("hscode with highest number of shipment: %s", hscode_topcount)
+sprintf("hscode with highest weight(kg) per shipment: %s", hscode_top_avekg)
+
+```
+
+```{r}
+head(hscode_count%>%
+                                filter(count>1000) %>%
+                                arrange(desc(kg_per_ship)),5)
 ```
 
 # 4. Pattern Analysis & Visualization
@@ -161,11 +181,11 @@ mc2_selected_id <- pull(mc2_edges %>%
                                id)
 
 mc2_selected_companies <- mc2_edges %>%
-  filter(source == mc2_selected_id) %>%
-  select(source,year,weightkg) %>%
+  filter(source %in% mc2_selected_id) %>%
+  select(source,year) %>%
   group_by(source,year) %>%
-  summarize(kg_per_ship=sum(weightkg)/n()) %>%
-  pivot_wider(names_from = year, values_from = kg_per_ship, values_fill = 0) 
+  summarize(shipment=n()) %>%
+  pivot_wider(names_from = year, values_from = shipment, values_fill = 0) 
 
 row.names(mc2_selected_companies) <- mc2_selected_companies$source
 companies_matrix <- data.matrix(mc2_selected_companies)
@@ -185,22 +205,21 @@ heatmaply(normalize(companies_matrix[, -c(1, 5)]),
           margins = c(NA,200,60,NA),
           fontsize_row = 6,
           fontsize_col = 6,
-          main="Companies' change of fishing weights per shipment by year",
+          main="Companies' yearly trend of shipment counts",
           xlab = "Year",
           ylab = "Companies"
           )
 ```
 
+::: callout-caution
+### Please mind here:
+
+There are several companies have abrupt change in number of shipment through years. This could indicating abnormal like change of identity or abnormal fishing activities.
+:::
+
 ## 4.2 Visualizing networks
 
 ### 4.2.1 Preparing data:
-
--   Find hscode with most shipment in 2032, here I will pull out those hscode with more than 10K shipments in total.
-
-```{r}
-hscode_maj <- pull(select(hscode_count[hscode_count$count > 10000, ], hscode),hscode)
-hscode_maj
-```
 
 -   Filtering edges by 2032 and set count as weights.
 
@@ -208,20 +227,20 @@ hscode_maj
 mc2_edges_aggregated <- mc2_edges %>%
   filter(year == 2032) %>%
   group_by(source, target, hscode, from, to) %>%
-  summarise(weights = n()) %>%
+  summarise(weights = n(), ave_kg = sum(weightkg)/weights) %>%
   filter(source!=target) %>%
   ungroup()
 
 glimpse(mc2_edges_aggregated)
 ```
 
-### 4.2.2 Build network graph for hscode1:
+### 4.2.2 Build network graph for hscode with highest shipment counts:
 
 -   Find edges of hscode equal to "306170".
 
 ```{r}
-mc2_edges_hscode1 <- mc2_edges_aggregated %>%
-  filter(hscode == hscode_maj[1]) %>%
+mc2_edges_topcount <- mc2_edges_aggregated %>%
+  filter(hscode == hscode_topcount) %>%
   group_by(from, to) %>%
   summarise(weights = sum(weights)) %>%
   filter(from!=to) %>%
@@ -229,14 +248,14 @@ mc2_edges_hscode1 <- mc2_edges_aggregated %>%
   ungroup
 ```
 
--   Extract nodes. Check source and target companies, categorize them into "fisher" or "wholesaler".
+-   Extract nodes. Check source and target companies, categorize them into "fisher" (nodes in "from" column) or "wholesaler" (nodes in "to" column).
 
 ```{r}
-mc2_nodes_hscode1 <- rbind(mc2_edges_hscode1 %>%
+mc2_nodes_topcount <- rbind(mc2_edges_topcount %>%
                                 select(from)%>%
                                 rename(id=from) %>%
                              mutate(group="fisher"),
-                              mc2_edges_hscode1 %>%
+                              mc2_edges_topcount %>%
                                 select(to)%>%
                                 rename(id=to) %>%
                              mutate(group="wholesaler")) %>% distinct()
@@ -245,29 +264,31 @@ mc2_nodes_hscode1 <- rbind(mc2_edges_hscode1 %>%
 -   Check any nodes been categorized into both "fisher" and "wholesaler", mutate their group by higher weights.
 
 ```{r}
-lookup1 <- mc2_nodes_hscode1 %>%
+lookup_topcount <- mc2_nodes_topcount %>%
   group_by(id) %>%
   summarise(count=n()) %>%
   filter(count>1) %>%
-  left_join(mc2_edges_hscode1%>%
+  left_join(mc2_edges_topcount%>%
               group_by(from)%>%
               summarise(from_weights= sum(weights)),
             by=c("id"="from")) %>%
-  left_join(mc2_edges_hscode1%>%
+  left_join(mc2_edges_topcount%>%
               group_by(to)%>%
               summarise(to_weights=sum(weights)),
             by=c("id"="to")) %>%
   mutate(group=ifelse(from_weights >= to_weights, "fisher","wholesaler"))
 
-mc2_nodes_hscode1 <- mc2_nodes_hscode1 %>%
-  left_join(lookup1%>%select(id,group),by="id") %>%
+mc2_nodes_topcount <- mc2_nodes_topcount %>%
+  left_join(lookup_topcount%>%select(id,group),by="id") %>%
   mutate(group = ifelse(!is.na(group.y),group.y,group.x)) %>%
   select(-group.y,-group.x) %>%
   distinct()
 ```
 
+-   Check mutual-exclusiveness of category.
+
 ```{r}
-mc2_nodes_hscode1 %>%
+mc2_nodes_topcount %>%
   group_by(id) %>%
   summarise(count=n())%>%
   filter(count>1)
@@ -276,35 +297,77 @@ mc2_nodes_hscode1 %>%
 -   Build network graph.
 
 ```{r}
-mc2_graph_hscode1 <- tbl_graph(nodes = mc2_nodes_hscode1,
-                       edges = mc2_edges_hscode1,
+mc2_graph_topcount <- tbl_graph(nodes = mc2_nodes_topcount,
+                       edges = mc2_edges_topcount,
                        directed = TRUE)
 ```
 
 ```{r}
-mc2_graph_hscode1 %>%
+mc2_graph_topcount %>%
   ggraph(layout = "fr") +
   geom_edge_link(aes(width=weights), 
                  alpha=0.2) +
   scale_edge_width(range = c(0.1, 2)) +
   geom_node_point(aes(color=group, 
-                  size = centrality_betweenness())) + 
+                  size = centrality_degree(mode = "out"))) + 
   theme_graph()
 ```
 
--   Find nodes with between-ness \>= 5:
+::: callout-notice
+Here I used out-degree centrality as nodes' size to focus more on shippers.
+:::
+
+-   Check nodes with out-degree \>= 20, those fisher transit products to many different nodes, they may conduct unreported fishing and try to hide it in splitted transactions.
 
 ```{r}
-mc2_graph_hscode1 %>%
-  mutate(centrality_bet = centrality_betweenness()) %>%
-  filter(centrality_bet>=5) %>%
-  select(id,group)
+mc2_graph_topcount %>%
+    mutate(centrality_bet = centrality_degree(mode = "out")) %>%
+    filter(centrality_bet>=20) %>%
+    select(id,group) 
 ```
 
--   Build interactive network graph.
+-   Since from the network graph above we can see that there are a lot of nodes in this network, here I will build interactive network graph with subset of data filtered by weights more than once a month(12).
 
 ```{r}
-visNetwork(mc2_nodes_hscode1,mc2_edges_hscode1) %>%
+mc2_edges_topcount_sub <- mc2_edges_topcount %>%
+  filter(weights>12)
+```
+
+```{r}
+#categarize nodes into 2 groups and make sure the group label is mutual exclusive
+mc2_nodes_topcount_sub <- rbind(mc2_edges_topcount_sub %>%
+                                select(from)%>%
+                                rename(id=from) %>%
+                             mutate(group="fisher"),
+                              mc2_edges_topcount_sub %>%
+                                select(to)%>%
+                                rename(id=to) %>%
+                             mutate(group="wholesaler")) %>% distinct()
+
+lookup_topcount_sub <- mc2_nodes_topcount_sub %>%
+  group_by(id) %>%
+  summarise(count=n()) %>%
+  filter(count>1) %>%
+  left_join(mc2_edges_topcount_sub%>%
+              group_by(from)%>%
+              summarise(from_weights= sum(weights)),
+            by=c("id"="from")) %>%
+  left_join(mc2_edges_topcount_sub%>%
+              group_by(to)%>%
+              summarise(to_weights=sum(weights)),
+            by=c("id"="to")) %>%
+  mutate(group=ifelse(from_weights >= to_weights, "fisher","wholesaler"))
+
+mc2_nodes_topcount_sub <- mc2_nodes_topcount_sub %>%
+  left_join(lookup_topcount_sub%>%select(id,group),by="id") %>%
+  mutate(group = ifelse(!is.na(group.y),group.y,group.x)) %>%
+  select(-group.y,-group.x) %>%
+  distinct()
+```
+
+```{r}
+#build interactive network graph
+visNetwork(mc2_nodes_topcount_sub,mc2_edges_topcount_sub) %>%
   visIgraphLayout(layout = "layout_with_fr") %>%
   visEdges(arrows = "to", 
            smooth = list(enabled = TRUE, 
@@ -315,69 +378,54 @@ visNetwork(mc2_nodes_hscode1,mc2_edges_hscode1) %>%
   visLayout(randomSeed = 123)
 ```
 
-### 4.2.3 Build network graph for hscode2:
-
--   Find edges of hscode equal to "940360".
+Then let's checkout those edges with only 1 shipment during the year:
 
 ```{r}
-mc2_edges_hscode2 <- mc2_edges_aggregated %>%
-  filter(hscode == hscode_maj[2]) %>%
+mc2_edges_topcount_1time <- mc2_edges_aggregated %>%
+  filter(hscode == hscode_topcount) %>%
   group_by(from, to) %>%
   summarise(weights = sum(weights)) %>%
   filter(from!=to) %>%
-  filter(weights>1) %>%
+  filter(weights==1) %>%
   ungroup
 ```
 
--   Extract nodes. Check source and target companies, categorize them into "fisher" or "wholesaler".
-
 ```{r}
-mc2_nodes_hscode2 <- rbind(mc2_edges_hscode2 %>%
+#categarize nodes into 2 groups and make sure the group label is mutual exclusive
+mc2_nodes_topcount_1time <- rbind(mc2_edges_topcount_1time %>%
                                 select(from)%>%
-                                rename(id=from)%>%
+                                rename(id=from) %>%
                              mutate(group="fisher"),
-                          mc2_edges_hscode2 %>%
+                              mc2_edges_topcount_1time %>%
                                 select(to)%>%
-                                rename(id=to)%>%
+                                rename(id=to) %>%
                              mutate(group="wholesaler")) %>% distinct()
-```
 
--   Check any nodes been categorized into both "fisher" and "wholesaler", mutate their group by higher weights.
-
-```{r}
-lookup2 <- mc2_nodes_hscode2 %>%
+lookup_topcount_1time <- mc2_nodes_topcount_1time %>%
   group_by(id) %>%
   summarise(count=n()) %>%
   filter(count>1) %>%
-  left_join(mc2_edges_hscode2%>%
+  left_join(mc2_edges_topcount_1time%>%
               group_by(from)%>%
               summarise(from_weights= sum(weights)),
             by=c("id"="from")) %>%
-  left_join(mc2_edges_hscode2%>%
+  left_join(mc2_edges_topcount_1time%>%
               group_by(to)%>%
               summarise(to_weights=sum(weights)),
             by=c("id"="to")) %>%
   mutate(group=ifelse(from_weights >= to_weights, "fisher","wholesaler"))
 
-mc2_nodes_hscode2 <- mc2_nodes_hscode2 %>%
-  left_join(lookup2%>%select(id,group),by="id") %>%
+mc2_nodes_topcount_1time <- mc2_nodes_topcount_1time %>%
+  left_join(lookup_topcount_1time%>%select(id,group),by="id") %>%
   mutate(group = ifelse(!is.na(group.y),group.y,group.x)) %>%
   select(-group.y,-group.x) %>%
   distinct()
 ```
 
 ```{r}
-mc2_nodes_hscode2 %>%
-  group_by(id) %>%
-  summarise(count=n())%>%
-  filter(count>1)
-```
-
--   Build interactive network graph.
-
-```{r}
-visNetwork(mc2_nodes_hscode2,mc2_edges_hscode2) %>%
-  visIgraphLayout(layout = "layout_with_kk") %>%
+#build interactive network graph
+visNetwork(mc2_nodes_topcount_1time,mc2_edges_topcount_1time) %>%
+  visIgraphLayout(layout = "layout_with_fr") %>%
   visEdges(arrows = "to", 
            smooth = list(enabled = TRUE, 
                          type = "curvedCW")) %>%
@@ -385,230 +433,75 @@ visNetwork(mc2_nodes_hscode2,mc2_edges_hscode2) %>%
              nodesIdSelection = TRUE) %>%
   visLegend() %>%
   visLayout(randomSeed = 123)
-```
-
-### 4.2.4 Build network graph for hscode3:
-
--   Find edges of hscode equal to "870899".
-
-```{r}
-mc2_edges_hscode3 <- mc2_edges_aggregated %>%
-  filter(hscode == hscode_maj[3]) %>%
-  group_by(from, to) %>%
-  summarise(weights = sum(weights)) %>%
-  filter(from!=to) %>%
-  filter(weights>1) %>%
-  ungroup
-```
-
--   Extract nodes. Check source and target companies, categorize them into "fisher" or "wholesaler".
-
-```{r}
-mc2_nodes_hscode3 <- rbind(mc2_edges_hscode3 %>%
-                                select(from)%>%
-                                rename(id=from)%>%
-                             mutate(group="fisher"),
-                          mc2_edges_hscode3 %>%
-                                select(to)%>%
-                                rename(id=to)%>%
-                             mutate(group="wholesaler")) %>% distinct()
-```
-
--   Check any nodes been categorized into both "fisher" and "wholesaler", mutate their group by higher weights.
-
-```{r}
-lookup3 <- mc2_nodes_hscode3 %>%
-  group_by(id) %>%
-  summarise(count=n()) %>%
-  filter(count>1) %>%
-  left_join(mc2_edges_hscode3%>%
-              group_by(from)%>%
-              summarise(from_weights= sum(weights)),
-            by=c("id"="from")) %>%
-  left_join(mc2_edges_hscode3%>%
-              group_by(to)%>%
-              summarise(to_weights=sum(weights)),
-            by=c("id"="to")) %>%
-  mutate(group=ifelse(from_weights >= to_weights, "fisher","wholesaler"))
-
-mc2_nodes_hscode3 <- mc2_nodes_hscode3 %>%
-  left_join(lookup3%>%select(id,group),by="id") %>%
-  mutate(group = ifelse(!is.na(group.y),group.y,group.x)) %>%
-  select(-group.y,-group.x) %>%
-  distinct()
-```
-
-```{r}
-mc2_nodes_hscode3 %>%
-  group_by(id) %>%
-  summarise(count=n())%>%
-  filter(count>1)
-```
-
--   Build interactive network graph.
-
-```{r}
-visNetwork(mc2_nodes_hscode3,mc2_edges_hscode3) %>%
-  visIgraphLayout(layout = "layout_with_kk") %>%
-  visEdges(arrows = "to", 
-           smooth = list(enabled = TRUE, 
-                         type = "curvedCW")) %>%
-  visOptions(highlightNearest = TRUE,
-             nodesIdSelection = TRUE) %>%
-  visLegend() %>%
-  visLayout(randomSeed = 123)
-```
-
-## 4.3 Evaluate the sets of predicted knowledge graph links FishEye has provided
-
-### 4.3.1 Read provided json files:
-
-Firstly read all 12 files provided by Fisheye into one table.
-
-```{r}
-files <- list.files(path = "data/bundles", full.names = TRUE)
-
-fisheye_files <- lapply(files, fromJSON)
-fisheyedata <- lapply(fisheye_files, function(json) {
-  json$nodes
-  json$links
-})
-
-fisheye <- bind_rows(fisheyedata)
-```
-
-```{r}
-fisheye_edges <- as_tibble(fisheye) %>%
-  mutate(arrivaldate = ymd(arrivaldate)) %>%
-  mutate(year = year(arrivaldate)) %>%
-  select(source, target, generated_by, hscode, arrivaldate, year,weightkg) %>%
-  rename(type = generated_by) %>%
-#  drop_na() %>%
-  distinct()
-```
-
-Then check number of edges by year and by "generagted_by" (here I renamed this column as "group")
-
-```{r}
-fisheye_count <-  fisheye_edges %>%
-  select(year,type,weightkg) %>%
-  group_by(year,type) %>%
-  summarise(count= n(),weightkg = sum(weightkg)) %>%
-  arrange(year)
-
-fisheye_count
-```
-
-### 4.3.2 Data wrangling for network graph:
-
-```{r}
-fisheye_edges_aggregated <- fisheye_edges %>%
-  group_by(source, target, hscode, year, type) %>%
-    summarise(weights = n()) %>%
-  filter(source!=target) %>%
-  ungroup()
-```
-
-```{r}
-fisheye_nodes_extracted <- rbind(fisheye_edges_aggregated %>%
-  select(source,type) %>%
-  rename(id = source), 
-  fisheye_edges_aggregated %>%
-  select(target,type) %>%
-  rename(id = target)) %>%
-  distinct()
-```
-
-### 4.3.3 Visualize graph provided by Fisheye:
-
-```{r}
-fisheye_graph <- tbl_graph(nodes = fisheye_nodes_extracted,
-                       edges = fisheye_edges_aggregated,
-                       directed = TRUE)
-```
-
-```{r}
-set_graph_style() 
-
-ggraph(fisheye_graph, 
-            layout = "nicely") + 
-  geom_edge_link(aes(linewidth=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(), size = 0.5) +
-  theme(legend.position = 'bottom')+ 
-  facet_nodes(~type)+
-  th_foreground(foreground = "grey90",  
-                border = TRUE)  
 ```
 
 ::: callout-caution
-### Minding Here:
+### Please mind here:
 
-I will firstly choose those set of links with more nodes. The final choice can be made only after we saw the complementary effect after we add those links to original network.
+Here from the graph of edges both with weights \>=12 and weights == 1, we can see a basic pattern of transitons is that they are directed from multiple fishers to single wholesaler.
 :::
 
--   Build network graph for selected set of links:
+### 4.2.3 Build network graph for hscodes with highest weight(kg) per shipment:
+
+-   Find edges of the hscodes.
 
 ```{r}
-selected_links <- c('carp','catfish','chub_mackerel','herring','mackerel','pollock','salmon_wgl')
-
-fisheye_selected_edges <- fisheye_edges_aggregated %>%
-  filter(type == selected_links) %>%
-  rename(from = source) %>%
-  rename(to = target) %>%
-  filter(from != to) %>%
-  distinct()
-
-fisheye_selected_nodes <- rbind(fisheye_selected_edges %>%
-                                select(from)%>%
-                                rename(id=from)%>%
-                                  mutate(group = "fisher"),
-                                fisheye_selected_edges %>%
-                                select(to)%>%
-                                rename(id=to)%>%
-                                  mutate(group = "wholesaler")) %>% distinct()
+mc2_edges_topkg <- mc2_edges_aggregated %>%
+  filter(hscode == hscode_top_avekg) %>%
+  group_by(from, to) %>%
+  summarise(weights = sum(weights)) %>%
+  filter(from!=to) %>%
+#  filter(weights>1) %>%
+  ungroup
 ```
 
+-   Extract nodes. Check source and target companies, categorize them into "fisher" (nodes in "from" column) or "wholesaler" (nodes in "to" column).
+
 ```{r}
-fisheye_lookup <- fisheye_selected_nodes %>%
+mc2_nodes_topkg <- rbind(mc2_edges_topkg %>%
+                                select(from)%>%
+                                rename(id=from) %>%
+                             mutate(group="fisher"),
+                              mc2_edges_topkg %>%
+                                select(to)%>%
+                                rename(id=to) %>%
+                             mutate(group="wholesaler")) %>% distinct()
+
+lookup_topkg <- mc2_nodes_topkg %>%
   group_by(id) %>%
   summarise(count=n()) %>%
   filter(count>1) %>%
-  left_join(fisheye_selected_edges%>%
+  left_join(mc2_edges_topkg%>%
               group_by(from)%>%
               summarise(from_weights= sum(weights)),
             by=c("id"="from")) %>%
-  left_join(mc2_edges_hscode3%>%
+  left_join(mc2_edges_topkg%>%
               group_by(to)%>%
               summarise(to_weights=sum(weights)),
             by=c("id"="to")) %>%
-  mutate(group=ifelse(from_weights >= to_weights | is.na(to_weights), "fisher","wholesaler"))
+  mutate(group=ifelse(from_weights >= to_weights, "fisher","wholesaler"))
 
-fisheye_selected_nodes <- fisheye_selected_nodes %>%
-  left_join(fisheye_lookup%>%select(id,group),by="id") %>%
+mc2_nodes_topkg <- mc2_nodes_topkg %>%
+  left_join(lookup_topkg%>%select(id,group),by="id") %>%
   mutate(group = ifelse(!is.na(group.y),group.y,group.x)) %>%
   select(-group.y,-group.x) %>%
   distinct()
 ```
 
+-   Check mutual-exclusiveness of category.
+
 ```{r}
-fisheye_selected_nodes %>%
+mc2_nodes_topcount %>%
   group_by(id) %>%
-  summarise(count=n()) %>%
+  summarise(count=n())%>%
   filter(count>1)
 ```
 
-```{r}
-#| fig-width: 6
-#| fig-height: 6
+-   Build interactive network graph.
 
-fisheye_selected_graph <- tbl_graph(nodes = fisheye_selected_nodes,
-                       edges = fisheye_selected_edges,
-                       directed = TRUE)
-centrality <- degree(fisheye_selected_graph)
-visNetwork(fisheye_selected_nodes,fisheye_selected_edges) %>%
-  visIgraphLayout(layout = "layout_with_kk") %>%
+```{r}
+visNetwork(mc2_nodes_topkg,mc2_edges_topkg) %>%
+  visIgraphLayout(layout = "layout_with_fr") %>%
   visEdges(arrows = "to", 
            smooth = list(enabled = TRUE, 
                          type = "curvedCW")) %>%
@@ -617,3 +510,9 @@ visNetwork(fisheye_selected_nodes,fisheye_selected_edges) %>%
   visLegend() %>%
   visLayout(randomSeed = 123)
 ```
+
+::: callout-caution
+### Please mind here:
+
+Here we find the transition pattern is more of directed from one fisher to multiple wholesaler, this may due to the average weight(kg) of the product if relatively higher, so different parts of fish need to sale to different dealers.
+:::

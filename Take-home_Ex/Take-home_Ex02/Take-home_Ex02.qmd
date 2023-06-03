@@ -320,7 +320,7 @@ mc2_graph_topcount %>%
     select(id,group) 
 ```
 
--   Since from the network graph above we can see that there are a lot of nodes in this network, here I will build interactive network graph with subset of data filtered by weights more than once a month(12).
+-   Since from the network graph above we can see that there are a lot of nodes in this network, here I will build interactive network graph with subset of data filtered by weights more than once a month (i.e. count of shipments \>= 12).
 
 ```{r}
 mc2_edges_topcount_sub <- mc2_edges_topcount %>%
@@ -372,7 +372,7 @@ visNetwork(mc2_nodes_topcount_sub,mc2_edges_topcount_sub) %>%
   visLayout(randomSeed = 123)
 ```
 
-Then let's checkout those edges with only 1 shipment during the year:
+-   Then let's checkout those edges with only 1 shipment during the year:
 
 ```{r}
 mc2_edges_topcount_1time <- mc2_edges_aggregated %>%
@@ -432,7 +432,7 @@ visNetwork(mc2_nodes_topcount_1time,mc2_edges_topcount_1time) %>%
 ::: callout-caution
 ### Please mind here:
 
-Here from the graph of edges both with weights \>=12 and weights == 1, we can see a basic pattern of transitons is that they are directed from multiple fishers to single wholesaler.
+Here from the graph of edges both with weights \>=12 and weights == 1, we can see a basic pattern of transitions is that they are directed from multiple fishers to single wholesaler.
 :::
 
 ### 4.2.3 Build network graph for hscodes with highest weight(kg) per shipment:
@@ -508,5 +508,5 @@ visNetwork(mc2_nodes_topkg,mc2_edges_topkg) %>%
 ::: callout-caution
 ### Please mind here:
 
-Here we find the transition pattern is more of directed from one fisher to multiple wholesaler, this may due to the average weight(kg) of the product if relatively higher, so different parts of fish need to sale to different dealers.
+Here we find the transition pattern is more of directed from one fisher to multiple wholesaler, this may due to the average weight(kg) of the product is relatively higher, so different parts of fish need to sale to different dealers.
 :::

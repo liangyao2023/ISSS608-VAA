@@ -33,8 +33,8 @@ Second, FishEye has been using several tools, including artificial intelligence,
 
 4.  Identify companies that fit a pattern of illegal fishing. Use visualizations to support your conclusions and your confidence in them. Limit your response to 300 words and 4 images.
 
-::: callout-cautions
-Pleased be Noticed:
+::: callout-note
+### Note:
 
 Only Question 1 would be explored in this Exercise.
 :::

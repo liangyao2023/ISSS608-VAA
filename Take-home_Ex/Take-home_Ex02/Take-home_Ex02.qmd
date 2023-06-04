@@ -230,7 +230,7 @@ glimpse(mc2_edges_aggregated)
 
 ### 4.2.2 Build network graph for hscode with highest shipment counts:
 
--   Find edges of hscode equal to "306170".
+-   Find edges of hscode equal to "306170". And focus on shipments more than once a month (i.e. count of shipments \>= 12).
 
 ```{r}
 mc2_edges_topcount <- mc2_edges_aggregated %>%
@@ -238,7 +238,7 @@ mc2_edges_topcount <- mc2_edges_aggregated %>%
   group_by(from, to) %>%
   summarise(weights = sum(weights)) %>%
   filter(from!=to) %>%
-  filter(weights>1) %>%
+  filter(weights>12) %>%
   ungroup
 ```
 
@@ -300,68 +300,33 @@ mc2_graph_topcount <- tbl_graph(nodes = mc2_nodes_topcount,
 mc2_graph_topcount %>%
   ggraph(layout = "fr") +
   geom_edge_link(aes(width=weights), 
-                 alpha=0.2) +
-  scale_edge_width(range = c(0.1, 2)) +
+                 alpha=0.8, color="lightblue") +
+  scale_edge_width(range = c(0.5, 3)) +
   geom_node_point(aes(color=group, 
                   size = centrality_degree(mode = "out"))) + 
+  scale_colour_manual(values=c("salmon","steelblue")) +
+  labs(size= "Out_degree")+
+  geom_node_text(aes(label=id), show.legend = FALSE, size=1) +
   theme_graph()
 ```
 
 ::: callout-notice
-Here I used out-degree centrality as nodes' size to focus more on shippers.
+Here I used out-degree centrality as nodes' size to focus more on shippers. We can tell from the graph, even if filtered by weights more than 12, it's still a very condensed network, indicating this hscode mainly contains a very popular product which may attract illegal fish activities and calls for more attention.
 :::
 
--   Check nodes with out-degree \>= 20, those fisher transit products to many different nodes, they may conduct unreported fishing and try to hide it in splitted transactions.
+-   Check nodes with out-degree \>= 10, those fisher transit products to many different nodes, it's possible that they conducted unreported fishing and tried to hide it in splitted transactions.
 
 ```{r}
 mc2_graph_topcount %>%
-    mutate(centrality_bet = centrality_degree(mode = "out")) %>%
-    filter(centrality_bet>=20) %>%
+    mutate(centrality = centrality_degree(mode = "out")) %>%
+    filter(centrality>=10) %>%
     select(id,group) 
 ```
 
--   Since from the network graph above we can see that there are a lot of nodes in this network, here I will build interactive network graph with subset of data filtered by weights more than once a month (i.e. count of shipments \>= 12).
+-   build an interactive network graph for closer check of nodes.
 
 ```{r}
-mc2_edges_topcount_sub <- mc2_edges_topcount %>%
-  filter(weights>12)
-```
-
-```{r}
-#categarize nodes into 2 groups and make sure the group label is mutual exclusive
-mc2_nodes_topcount_sub <- rbind(mc2_edges_topcount_sub %>%
-                                select(from)%>%
-                                rename(id=from) %>%
-                             mutate(group="fisher"),
-                              mc2_edges_topcount_sub %>%
-                                select(to)%>%
-                                rename(id=to) %>%
-                             mutate(group="wholesaler")) %>% distinct()
-
-lookup_topcount_sub <- mc2_nodes_topcount_sub %>%
-  group_by(id) %>%
-  summarise(count=n()) %>%
-  filter(count>1) %>%
-  left_join(mc2_edges_topcount_sub%>%
-              group_by(from)%>%
-              summarise(from_weights= sum(weights)),
-            by=c("id"="from")) %>%
-  left_join(mc2_edges_topcount_sub%>%
-              group_by(to)%>%
-              summarise(to_weights=sum(weights)),
-            by=c("id"="to")) %>%
-  mutate(group=ifelse(from_weights >= to_weights, "fisher","wholesaler"))
-
-mc2_nodes_topcount_sub <- mc2_nodes_topcount_sub %>%
-  left_join(lookup_topcount_sub%>%select(id,group),by="id") %>%
-  mutate(group = ifelse(!is.na(group.y),group.y,group.x)) %>%
-  select(-group.y,-group.x) %>%
-  distinct()
-```
-
-```{r}
-#build interactive network graph
-visNetwork(mc2_nodes_topcount_sub,mc2_edges_topcount_sub) %>%
+visNetwork(mc2_nodes_topcount,mc2_edges_topcount) %>%
   visIgraphLayout(layout = "layout_with_fr") %>%
   visEdges(arrows = "to", 
            smooth = list(enabled = TRUE, 
@@ -372,7 +337,7 @@ visNetwork(mc2_nodes_topcount_sub,mc2_edges_topcount_sub) %>%
   visLayout(randomSeed = 123)
 ```
 
--   Then let's checkout those edges with only 1 shipment during the year:
+-   Then let's compare with the network graph of those edges with only 1 shipment during the year:
 
 ```{r}
 mc2_edges_topcount_1time <- mc2_edges_aggregated %>%
@@ -428,6 +393,10 @@ visNetwork(mc2_nodes_topcount_1time,mc2_edges_topcount_1time) %>%
   visLegend() %>%
   visLayout(randomSeed = 123)
 ```
+
+::: callout-notice
+From this graph of those edges only once in a year, we can see the number of fisers (blue points) is far more than frequent (\>=12 times in a year) fishers in upper graph. Since we have concluded this hscode mainly contains a popular product, transit for only once in a year seems not a normal conduction.
+:::
 
 ::: callout-caution
 ### Please mind here:

@@ -27,6 +27,8 @@ website:
             href: "Handson_Ex/Handson_Ex06/Handson_Ex06.html"
           - text: "Hands on_Ex 7"
             href: "Handson_Ex/Handson_Ex07/Handson_Ex07.html"
+          - text: "Hands on_Ex 8"
+            href: "Handson_Ex/Handson_Ex08/Handson_Ex08.html"
       - text: "Take Home_Ex"
         menu: 
           - text: "Take Home_Ex 1"

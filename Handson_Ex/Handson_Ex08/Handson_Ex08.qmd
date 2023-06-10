@@ -730,7 +730,7 @@ percentmap("total_wp", NGA_wp)
 ```
 
 ::: callout-notes
-#### Note: 
+#### Note:
 
 This is just a bare bones implementation. Additional arguments such as the title, legend positioning just to name a few of them, could be passed to customise various features of the map.
 :::

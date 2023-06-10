@@ -1,7 +1,7 @@
 ---
 title: "Take-home_Ex03"
 author: "LIANG YAO"
-date: '10 June 2023'
+date: '17 June 2023'
 date-modified: "`r Sys.Date()`"
 execute: 
   warning: false
@@ -43,9 +43,7 @@ pacman::p_load(igraph, ggraph, visNetwork, tidyverse, graphlayouts, jsonlite, he
 mc3 <- jsonlite::fromJSON("data/MC3.json")
 ```
 
-# 3. Data checking/cleaning:
-
-## 3.1 Find the nodes and edges:
+## 2.1 Find the nodes and edges:
 
 ```{r}
 #view(mc2[["nodes"]])
@@ -77,12 +75,23 @@ mc3_edges <- as_tibble(mc3$links) %>%
 glimpse(mc3_edges)
 ```
 
+# 3. Initial Data Exploring:
+
+## 3.1 Exploring the edge data frame.
+
 ```{r}
-mc3_edges %>%
-  select(type) %>%
-  group_by(type) %>%
-  summarise(count = n())
+ggplot(data = mc3_edges, 
+       aes(x=type)) +
+  geom_bar() +
+  xlab("Type")+
+  ylab("Count")
 ```
+
+```{r}
+DT::datatable(mc3_edges)
+```
+
+## 3.2 Exploring the nodes data frame.
 
 ```{r}
 ggplot(data = mc3_nodes, 
@@ -93,35 +102,36 @@ ggplot(data = mc3_nodes,
 ```
 
 ```{r}
+DT::datatable(mc3_nodes)
+```
+
+::: callout-note
+### Note:
+
+.
+:::
+
+## 3.3 Text sensing and nodes categorization:
+
+### 3.3.1 Extract text and preprocessing.
+
+-   Extract text
+
+```{r}
 mc3_nodes %>%
   select(product_services) %>%
   group_by(product_services) %>%
   summarise(count = n())
 ```
 
-::: callout-note
-### Note:
-
-Here before we do text analysis on product services, some stopwords like "character(0)" need to be treated.
-:::
-
-## 3.2 Wrangling attributes:
-
--   Find hscode with most edges and hscode with most weightkg of fishing:
-
-    ```{r}
-    mc3_nodes %>%
-      mutate(n_fish = str_count(product_services), "fish")
-    ```
-
-Word tokenization with punctuation and no lowercasing
+-   Word tokenization with punctuation and no lowercasing
 
 ```{r}
 tidy_nodes <- mc3_nodes %>%
   unnest_tokens(word, product_services, to_lower = TRUE, strip_punct = TRUE)
 ```
 
-Removing stop words
+-   Removing stop words
 
 ```{r}
 tidy_stopwords <- tidy_nodes %>%
@@ -129,16 +139,33 @@ tidy_stopwords <- tidy_nodes %>%
 #  anti_join(by = c("character","0","unknown"))
 ```
 
--   Distribution of fishing weight (kg) by years:
+::: callout-notes
+### Note: 
+
+Here need to also remove "character","0","unknown" as stop words.
+:::
+
+### 3.3.2 Find nodes' product services mainly focus on "fish" or "transportation":
+
+-   nodes' product services mainly focus on "fish"
 
 ```{r}
-#| fig-width: 6
-#| fig-height: 3
-
-
+mc3_nodes %>%
+  mutate(n_fish = str_count(product_services), "fish")
 ```
 
--   Distribution of number of edges by years:
+-   nodes' product services mainly focus on "transportation", "warehouse", "trad","commercial":
+
+```{r}
+mc3_nodes %>%
+  mutate(n_logistic = str_count(product_services), "transportation")
+```
+
+-   check nodes' category by their product services
+
+```{r}
+
+```
 
 # 4. Pattern Analysis & Visualization
 

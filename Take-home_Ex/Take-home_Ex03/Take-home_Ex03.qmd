@@ -33,10 +33,18 @@ Use visual analytics to understand patterns of groups in the knowledge graph and
 
 4.  Based on your visualizations, provide evidence for or against the case that anomalous companies are involved in illegal fishing. Which business groups should FishEye investigate further? Limit your response to 600 words and 6 images.
 
+::: callout-caution
+### Please be noticed:
+
+In this exercise, only question 1 and question 2 would be explored.
+:::
+
 # 2. Load packages and data:
 
 ```{r}
-pacman::p_load(igraph, ggraph, visNetwork, tidyverse, graphlayouts, jsonlite, heatmaply, stringr, tidytext)
+pacman::p_load(jsonlite, tidygraph, ggraph, 
+               visNetwork, graphlayouts, 
+               skimr, tidytext, tidyverse)
 ```
 
 ```{r}
@@ -44,6 +52,8 @@ mc3 <- jsonlite::fromJSON("data/MC3.json")
 ```
 
 ## 2.1 Find the nodes and edges:
+
+### 2.1.1 Nodes
 
 ```{r}
 #view(mc2[["nodes"]])
@@ -59,12 +69,19 @@ mc3_nodes <- as_tibble(mc3$nodes) %>%
 ```
 
 ```{r}
+skim(mc3_nodes)
+```
+
+### 2.1.2 Edges:
+
+```{r}
 #view(mc2[["links"]])
 mc3_edges <- as_tibble(mc3$links) %>%
   distinct() %>%
   mutate(source=as.character(source),
          target=as.character(target),
          type=as.character(type)) %>%
+  mutate(source=as.character(source)) %>%
   group_by(source, target, type) %>%
   summarise(weight=n()) %>%
   filter(source!=target) %>%
@@ -72,259 +89,469 @@ mc3_edges <- as_tibble(mc3$links) %>%
 ```
 
 ```{r}
-glimpse(mc3_edges)
+mc3_edges <- rbind(mc3_edges %>%
+  mutate(source = ifelse(grepl("^c\\(.*\\)$", source), source, NA)) %>%
+  drop_na() %>%
+  mutate(source = strsplit(gsub("^c\\(\"|\"\\)$|\"", "", source), ",\\s*")) %>%
+  unnest(source),
+  mc3_edges[!grepl("^c\\(.*\\)$", mc3_edges$source), ])
 ```
+
+```{r}
+skim(mc3_edges)
+```
+
+::: callout-caution
+### Caution Here:
+
+There are plenty of rows in "source" column are comma separated characters, I broke them into individual rows by deliminator of ",", remove all those "c("")", and then rebind with other normal columns.
+:::
 
 # 3. Initial Data Exploring:
 
 ## 3.1 Exploring the edge data frame.
 
-```{r}
-ggplot(data = mc3_edges, 
-       aes(x=type)) +
-  geom_bar() +
-  xlab("Type")+
-  ylab("Count")
-```
+-   Check the type distribution of edges:
 
 ```{r}
-DT::datatable(mc3_edges)
+mc3_edges %>%
+  group_by(type) %>%
+  summarise(count=n())
 ```
 
 ## 3.2 Exploring the nodes data frame.
 
-```{r}
-ggplot(data = mc3_nodes, 
-       aes(x=type)) +
-  geom_bar() +
-  xlab("Type")+
-  ylab("Count")
-```
+-   Check products & services of each kind of nodes:
 
 ```{r}
-DT::datatable(mc3_nodes)
+product_check <- left_join(mc3_nodes %>%
+  group_by(type) %>%
+  summarise(nodes=n()),
+  mc3_nodes %>%
+  mutate(n_0 = str_count(product_services, "character")) %>%
+  filter(n_0>0) %>%
+  group_by(type) %>%
+  summarise(empty_product=n()),
+  by=join_by(type),
+  keep=FALSE)%>%
+  mutate(nodes_with_product=nodes-empty_product)
+
+product_check
 ```
 
-::: callout-note
-### Note:
+::: callout-caution
+### Caution Here:
 
-.
+Most of Beneficial Owner and Company Contacts nodes' product_services are indicated as "character(0)", so only "Company" type of nodes got specific product and services description.
 :::
 
-## 3.3 Text sensing and nodes categorization:
+# 4. Pattern Analysis & Visualization
 
-### 3.3.1 Extract text and preprocessing.
+## 4.1 Check "Company" type of nodes with most "Company Contacts" type of edges.
 
--   Extract text
+-   Find those "Company Contacts" edges of "Company" nodes.
 
 ```{r}
-mc3_nodes %>%
-  select(product_services) %>%
-  group_by(product_services) %>%
-  summarise(count = n())
+company_contacts <- mc3_nodes%>%
+  select(id,type) %>%
+  filter(type=='Company') %>%
+  distinct() %>%
+  inner_join(mc3_edges%>%
+              filter(type=='Company Contacts'),
+            by=join_by(id==source),
+            keep=TRUE,
+            multiple="all",
+            suffix=c('_nodes','_edges')) %>% 
+  group_by(source,target) %>%
+  summarise(weight=sum(weight)) %>%
+  arrange(desc(weight)) %>%
+  ungroup()
+
 ```
+
+-   Extract and Visualize the companies with most company contacts edges.
+
+```{r}
+top10_contacts<- pull(head(company_contacts %>%
+  group_by(source) %>%
+  summarise(count=n(),weight=sum(weight)) %>%
+  arrange(desc(count)), 10),source)
+
+ggplot(data = company_contacts %>%
+  group_by(source) %>%
+  summarise(count=n(), weight=sum(weight)) %>%
+  arrange(desc(count)) %>%
+  head(10),
+       aes(x = reorder(source, weight),y=weight)) +
+  geom_col()+
+  xlab(NULL) +
+  coord_flip() +
+      labs(x = "Company",
+      y = "Weight",
+      title = "Top 10 Companies with most company contacts")
+```
+
+### 4.1.1 Network of source "Aqua Aura SE Marine life"
+
+-   Filter edges by source
+
+```{r}
+edges1 <- mc3_edges %>% 
+  filter(grepl(top10_contacts[1],source)) %>%
+  group_by(source,target,type) %>%
+  summarise(weight=sum(weight)) %>%
+  drop_na(weight) %>%
+  ungroup()
+```
+
+-   Extract nodes.
+
+```{r}
+nodes1_extract <- rbind(edges1 %>%
+                           rename(id=source)%>%
+                             mutate(group='company') %>% 
+                             select(id,group)%>%
+                             distinct(),
+                         edges1 %>%
+                           rename(id=target) %>%
+                           rename(group=type) %>%
+                           select(id,group) %>%
+                           distinct())
+```
+
+-   Check any duplication of nodes:
+
+```{r}
+nodes1_extract%>%
+  group_by(id) %>%
+  summarise(count=n())%>%
+  filter(count>1)
+```
+
+-   Building network model
+
+```{r}
+graph1 <- tbl_graph(nodes = nodes1_extract,
+                       edges = edges1,
+                       directed = FALSE) %>%
+  mutate(between = centrality_betweenness(),
+         close = centrality_closeness(),
+         degree = centrality_degree())
+```
+
+```{r}
+graph1 %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(width=weight,color=type), 
+                 alpha=0.8) +
+  scale_edge_width(range = c(0.5,3)) +
+  geom_node_point(aes(alpha=0.5,
+                  size = degree,
+                  color = group)) + 
+  scale_size_continuous(range=c(1,5))+
+  geom_node_text(aes(filter=degree >= 3, label=id), show.legend = FALSE, size=4) +
+  theme_graph()
+
+```
+
+::: callout-notice
+### Notes:
+
+Here we can see this is a normal network which connected with relatively more beneficial owner and some company contacts. Hence, the heaviest weight is 3 with majority of weight is 1.
+:::
+
+### 4.1.2 Network of "Irish Mackerel S.A."
+
+-   Filter edges and then Extract nodes
+
+```{r}
+edges2 <- mc3_edges %>% 
+  filter(grepl(top10_contacts[2],source)) %>%
+  group_by(source,target,type) %>%
+  summarise(weight=sum(weight)) %>%
+  drop_na(weight) %>%
+  ungroup()
+```
+
+```{r}
+nodes2_extract <- rbind(edges2 %>%
+                           rename(id=source)%>%
+                             mutate(group='company') %>% 
+                             select(id,group)%>%
+                             distinct(),
+                         edges2 %>%
+                           rename(id=target) %>%
+                           rename(group=type) %>%
+                           select(id,group) %>%
+                           distinct())
+```
+
+-   Building network model
+
+```{r}
+graph2 <- tbl_graph(nodes = nodes2_extract,
+                       edges = edges2,
+                       directed = FALSE) %>%
+  mutate(between = centrality_betweenness(),
+         close = centrality_closeness(),
+         degree = centrality_degree())
+```
+
+```{r}
+graph2 %>%
+    ggraph(layout = "fr") +
+  geom_edge_link(aes(width=weight,color=type)) +
+  scale_edge_width(range = c(0.5,3)) +
+  geom_node_point(aes(size = degree,
+                  color = group)) + 
+  scale_size_continuous(range=c(1,5))+
+  geom_node_text(aes(filter=degree >= 3, label=id), show.legend = FALSE, size=4) +
+  theme_graph()
+```
+
+::: callout-caution
+### Caution Here:
+
+Here we can see an abnormal network in which most of edges are connected with it's company contacts, and the edge with highest weight is connected with it's company contracts.
+:::
+
+### 4.1.3 Network of "Kerala S.A."
+
+-   Filter edges and then Extract nodes
+
+```{r}
+edges3 <- mc3_edges %>% 
+  filter(grepl(top10_contacts[3],source)) %>%
+  group_by(source,target,type) %>%
+  summarise(weight=sum(weight)) %>%
+  drop_na(weight) %>%
+  ungroup()
+```
+
+```{r}
+nodes3_extract <- rbind(edges3 %>%
+                           rename(id=source)%>%
+                             mutate(group='company') %>% 
+                             select(id,group)%>%
+                             distinct(),
+                         edges3 %>%
+                           rename(id=target) %>%
+                           rename(group=type) %>%
+                           select(id,group) %>%
+                           distinct())
+```
+
+-   Building network model
+
+```{r}
+graph3 <- tbl_graph(nodes = nodes3_extract,
+                       edges = edges3,
+                       directed = FALSE) %>%
+  mutate(between = centrality_betweenness(),
+         close = centrality_closeness(),
+         degree = centrality_degree())
+```
+
+```{r}
+graph3 %>%
+    ggraph(layout = "kk") +
+  geom_edge_link(aes(width=weight,color=type)) +
+  scale_edge_width(range = c(0.5,3)) +
+  geom_node_point(aes(size = degree,
+                  color = group)) + 
+  scale_size_continuous(range=c(1,5))+
+  geom_node_text(aes(filter=degree >= 3, label=id), show.legend = FALSE, size=4) +
+  theme_graph()
+```
+
+::: callout-caution
+### Caution Here:
+
+Similar anomalies as previous one.
+:::
+
+## 4.2 Nodes categorization by company ID:
+
+### 4.2.1 Extract id text and preprocessing.
 
 -   Word tokenization with punctuation and no lowercasing
 
 ```{r}
 tidy_nodes <- mc3_nodes %>%
-  unnest_tokens(word, product_services, to_lower = TRUE, strip_punct = TRUE)
+  unnest_tokens(word, id, to_lower = TRUE, strip_punct = TRUE,drop = FALSE)
 ```
 
--   Removing stop words
+-   Customize stop words and Remove stop words
 
 ```{r}
-tidy_stopwords <- tidy_nodes %>%
-  anti_join(stop_words) #%>%
-#  anti_join(by = c("character","0","unknown"))
+# Create a list of custom stopwords that should be added
+word <- c("llc","plc","ltd","inc","de","del","company","corporation","liability")
+lexicon <-  rep("custom", times=length(word))
+
+# Create a dataframe from the two vectors above
+mystopwords <- data.frame(word, lexicon)
+names(mystopwords) <- c("word", "lexicon")
+
+# Add the dataframe to stop_words df that exists in the library stopwords
+stop_words <-  dplyr::bind_rows(stop_words, mystopwords)
+```
+
+```{r}
+stopwords_removed <- tidy_nodes %>% 
+  anti_join(stop_words) 
 ```
 
 ::: callout-notes
-### Note: 
+### Notes:
 
-Here need to also remove "character","0","unknown" as stop words.
+Here need to customize stop words to include some company suffixes.
 :::
 
-### 3.3.2 Find nodes' product services mainly focus on "fish" or "transportation":
-
--   nodes' product services mainly focus on "fish"
+### 4.2.2 Visualize the id words with most counts
 
 ```{r}
-mc3_nodes %>%
-  mutate(n_fish = str_count(product_services), "fish")
-```
-
--   nodes' product services mainly focus on "transportation", "warehouse", "trad","commercial":
-
-```{r}
-mc3_nodes %>%
-  mutate(n_logistic = str_count(product_services), "transportation")
-```
-
--   check nodes' category by their product services
-
-```{r}
-
-```
-
-# 4. Pattern Analysis & Visualization
-
-## 4.1 Visualizing temporal patterns for individual entities by heatmap
-
-### 4.1.1 Transforming the data frame into a matrix
-
-Find edges filtering by those majority hscodes.
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-### 4.1.2 Building heatmap
-
-```{r}
-#| fig-width: 6
-#| fig-height: 8
-
-
-```
-
-## 4.2 Visualizing links between companies
-
-### 4.2.1 Build a network graph of those selected hscodes with most fishing weight:
-
--   Prepare the data and build a graph.
-
-```{r}
-
-```
-
-```{r}
-
-```
-
--   Basic network graph to see the whole picture.
-
-```{r}
-#| fig-width: 7
+#| fig-width: 5
 #| fig-height: 5
 
-
+stopwords_removed %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+      labs(x = "Unique words of ID",
+      y = "Count",
+      title = "Top 15 Count of unique words found in company ID")
 ```
 
--   Build a facet graph by years to see the change of network through years:
+### 4.2.3 Check "company" ID highest frequency word:
+
+-   Filter nodes with "Sons" in their ID text:
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
-
-
+nodes_sons <- mc3_nodes %>%
+  filter(type=='Company') %>%
+  select("id","country","type","product_services") %>%
+  mutate(n_sons = str_count(id, "Sons")) %>%
+  filter(n_sons>0) %>%
+  distinct()
 ```
 
--   Build a facet network graph by hscode:
+::: callout-notice
+### Notes:
+
+Here I only took out the "company" type of nodes with "Sons" in their ID.
+:::
+
+-   Filter edges by those ID we found with "Sons" and then Extract nodes
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 6
-
-
-```
-
--   Build a facet_nodes graph by hscode to see the difference:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 6
-
-
-```
-
-### 4.2.2 Find communities
-
-```{r}
-#| fig-width: 10
-#| fig-height: 6
-
-
-```
-
-### 4.2.3 Build interactive network graph.
-
-Prepare data for interactive network graph.
-
-```{r}
-
-```
-
-Build an interactive network graph for checking the position of each node.
-
-```{r}
-
-```
-
-## 4.3 Evaluate the sets of predicted knowledge graph links FishEye has provided
-
-### 4.3.1 Read provided json files:
-
-Firstly read all 12 files provided by Fisheye into one table.
-
-```{r}
-
+edges_sons <- nodes_sons%>%
+  select(id,country) %>%
+  distinct() %>%
+  left_join(mc3_edges,by=join_by(id==source),keep=TRUE,multiple="all") %>% 
+  group_by(source,target,type) %>%
+  summarise(weight=sum(weight)) %>%
+  drop_na(weight) %>%
+  ungroup()
 ```
 
 ```{r}
+nodes_sons_extract <- rbind(edges_sons %>%
+                           rename(id=source)%>%
+                             mutate(group='company') %>% 
+                             select(id,group)%>%
+                             distinct(),
+                         edges_sons %>%
+                           rename(id=target) %>%
+                           rename(group=type) %>%
+                           select(id,group) %>%
+                           distinct()) %>% 
+  left_join(mc3_nodes%>%select("id"), 
+             by = 'id', unmatched="drop", keep = FALSE, multiple= 'first')
+```
 
+-   Building network model
+
+```{r}
+visNetwork(nodes_sons_extract,edges_sons%>%
+             rename(from=source)%>%
+             rename(to=target)) %>%
+  visIgraphLayout(layout = "layout_with_fr") %>%
+  visEdges(smooth = list(enabled = TRUE, 
+                         type = "curvedCW")) %>%
+  visOptions(highlightNearest = TRUE,
+             nodesIdSelection = TRUE) %>%
+  visLegend() %>%
+  visLayout(randomSeed = 123)
+```
+
+::: callout-note
+### Notes:
+
+Those nodes are individually connected with different set of nodes, and no obvious cluster of company contacts, indicating there's no intensely close connected group of companies.
+:::
+
+### 4.2.4 Check "company" ID 2nd highest frequency word:
+
+-   Filter nodes with "Smith" in their ID text:
+
+```{r}
+nodes_smith <- mc3_nodes %>%
+  filter(type=='Company') %>%
+  select("id","country","type","product_services") %>%
+  mutate(n_sons = str_count(id, "Smith")) %>%
+  filter(n_sons>0) %>%
+  distinct()
+```
+
+-   Filter edges by those ID we found and then Extract nodes
+
+```{r}
+edges_smith <- nodes_smith%>%
+  select(id,country) %>%
+  distinct() %>%
+  left_join(mc3_edges,by=join_by(id==source),keep=TRUE,multiple="all") %>% 
+  group_by(source,target,type) %>%
+  summarise(weight=sum(weight)) %>%
+  drop_na(weight) %>%
+  ungroup()
 ```
 
 ```{r}
-
+nodes_smith_extract <- rbind(edges_smith %>%
+                           rename(id=source)%>%
+                             mutate(group='company') %>% 
+                             select(id,group)%>%
+                             distinct(),
+                         edges_smith %>%
+                           rename(id=target) %>%
+                           rename(group=type) %>%
+                           select(id,group) %>%
+                           distinct()) %>% 
+  left_join(mc3_nodes%>%select("id"), 
+             by = 'id', unmatched="drop", keep = FALSE, multiple= 'first')
 ```
 
-Then check number of edges by "hscode" and by "generagted_by" (here I renamed this column as "group")
+-   Building network model
 
 ```{r}
-
+visNetwork(nodes_smith_extract,edges_smith%>%
+             rename(from=source)%>%
+             rename(to=target)) %>%
+  visIgraphLayout(layout = "layout_with_fr") %>%
+  visEdges(smooth = list(enabled = TRUE, 
+                         type = "curvedCW")) %>%
+  visOptions(highlightNearest = TRUE,
+             nodesIdSelection = TRUE) %>%
+  visLegend() %>%
+  visLayout(randomSeed = 123)
 ```
 
-### 4.3.2 Data wrangling for network graph:
+::: callout-notice
+### Notes:
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-### 4.3.3 Visualize graph provided by Fisheye:
-
-```{r}
-
-```
-
--   Facet node graph by groups:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 8
-
-
-```
-
--   Facet network graph by groups:
-
-```{r}
-#| fig-width: 8
-#| fig-height: 8
-
- 
-```
-
-::: callout-caution
-### Conclusion:
-
-Here I will select "carp" group as the new set of links to add into mc2 graph, since from the facet nodes graph I can see this set of link got most and sparsest of nodes, indicating this set should be able to contribute the most to the original graph. At the same time, the facet network graph show not much difference between groups.
+Similar pattern with previous network with several central nodes which are connected with a set of beneficial owners and company contacts.
 :::
